@@ -1,5 +1,4 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-
 	package="me.blog.hgl1002.lboard"
 	>
 
@@ -10,6 +9,28 @@
 		android:roundIcon="@mipmap/ic_launcher_round"
 		android:supportsRtl="true"
 		android:theme="@style/AppTheme">
+
+		<service
+			android:name="LBoard"
+			android:label="@string/service_label"
+			android:permission="android.permission.BIND_INPUT_METHOD"
+			android:id="@+id/l_board">
+
+			<intent-filter>
+				<action android:name="android.view.InputMethod" />
+			</intent-filter>
+			<meta-data android:name="android.view.im" android:resource="@xml/method_ko" />
+		</service>
+
+		<activity
+			android:name=".gui.LBoardControlPanel"
+			android:label="@string/cp_settings_app_label">
+
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+			</intent-filter>
+		</activity>
 
 	</application>
 

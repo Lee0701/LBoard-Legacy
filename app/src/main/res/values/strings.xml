@@ -1,3 +1,8 @@
 <resources>
 	<string name="app_name">LBoard</string>
+
+	<string name="service_label">LBoard</string>
+
+	<string name="cp_settings_app_label">LBoard Settings</string>
+
 </resources>
