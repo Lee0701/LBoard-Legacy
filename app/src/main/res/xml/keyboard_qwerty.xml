@@ -43,7 +43,8 @@
 		<Key android:codes="42" android:keyLabel="n"/>
 		<Key android:codes="41" android:keyLabel="m"/>
 		<Key android:codes="67" android:keyLabel="DEL"
-			android:keyWidth="15%p" android:keyEdgeFlags="right" android:isRepeatable="true"/>
+			android:keyWidth="15%p" android:isRepeatable="true"
+			android:keyEdgeFlags="right"/>
 	</Row>
 
 </Keyboard>

@@ -53,21 +53,22 @@ public class DefaultHardKeyboard implements HardKeyboard {
 		case KeyEvent.KEYCODE_SHIFT_LEFT:
 		case KeyEvent.KEYCODE_SHIFT_RIGHT:
 			shiftPressing = true;
-			break;
+			return true;
 
 		case KeyEvent.KEYCODE_ALT_LEFT:
 		case KeyEvent.KEYCODE_ALT_RIGHT:
 			altPressing = true;
-			break;
+			return true;
 
 		default:
 			if(event.isPrintingKey()) {
 				char keyChar = (char) event.getUnicodeChar(
-						(shiftPressing ? KeyEvent.META_SHIFT_ON : 0) | (altPressing ? KeyEvent.META_ALT_ON : 0));
+						(shiftPressing || event.isShiftPressed() ? KeyEvent.META_SHIFT_ON : 0) | (altPressing ? KeyEvent.META_ALT_ON : 0));
 				ic.commitText(new String(new char[] {keyChar}), 1);
+				return true;
 			}
 		}
-		return true;
+		return false;
 	}
 
 	public boolean onKeyUp(KeyEvent event, KeyEventInfo info) {
@@ -75,12 +76,12 @@ public class DefaultHardKeyboard implements HardKeyboard {
 		case KeyEvent.KEYCODE_SHIFT_LEFT:
 		case KeyEvent.KEYCODE_SHIFT_RIGHT:
 			shiftPressing = false;
-			break;
+			return true;
 
 		case KeyEvent.KEYCODE_ALT_LEFT:
 		case KeyEvent.KEYCODE_ALT_RIGHT:
 			altPressing = false;
-			break;
+			return true;
 
 		}
 		return true;

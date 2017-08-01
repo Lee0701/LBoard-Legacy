@@ -18,7 +18,7 @@ public class LBoard extends InputMethodService {
 	protected HardKeyboard hardKeyboard;
 
 	public LBoard() {
-		softKeyboard = new DefaultSoftKeyboard();
+		softKeyboard = new DefaultSoftKeyboard(this);
 		hardKeyboard = new DefaultHardKeyboard(this);
 	}
 
@@ -37,22 +37,23 @@ public class LBoard extends InputMethodService {
 		return softKeyboard.createView(this);
 	}
 
-	public boolean onKeyEvent(KeyEvent event) {
+	public boolean onKeyEvent(KeyEvent event, boolean hardKey) {
 		boolean ret = false;
-		ret = hardKeyboard.onKeyEvent(event, new KeyEventInfo.Builder().setKeyType(KeyEventInfo.KEYTYPE_HARDKEY).build());
+		ret = hardKeyboard.onKeyEvent(
+				event, new KeyEventInfo.Builder().setKeyType(hardKey ? KeyEventInfo.KEYTYPE_HARDKEY : KeyEventInfo.KEYTYPE_SOFTKEY).build());
 		return ret;
 	}
 
 	@Override
 	public boolean onKeyDown(int keyCode, KeyEvent event) {
-		boolean result = onKeyEvent(event);
+		boolean result = onKeyEvent(event, true);
 		if(!result) return super.onKeyDown(keyCode, event);
 		else return result;
 	}
 
 	@Override
 	public boolean onKeyUp(int keyCode, KeyEvent event) {
-		boolean result = onKeyEvent(event);
+		boolean result = onKeyEvent(event, true);
 		if(!result) return super.onKeyUp(keyCode, event);
 		else return result;
 	}
