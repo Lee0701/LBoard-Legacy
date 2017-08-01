@@ -4,10 +4,17 @@ import android.inputmethodservice.InputMethodService;
 import android.view.KeyEvent;
 import android.view.View;
 
+import me.blog.hgl1002.lboard.ime.SoftKeyboard;
+import me.blog.hgl1002.lboard.ime.softkeyboard.DefaultSoftKeyboard;
+
 public class LBoard extends InputMethodService {
+
+	protected SoftKeyboard softKeyboard;
+
 	@Override
 	public void onCreate() {
 		super.onCreate();
+		softKeyboard = new DefaultSoftKeyboard();
 	}
 
 	@Override
@@ -17,7 +24,7 @@ public class LBoard extends InputMethodService {
 
 	@Override
 	public View onCreateInputView() {
-		return super.onCreateInputView();
+		return softKeyboard.createView(this);
 	}
 
 	@Override
