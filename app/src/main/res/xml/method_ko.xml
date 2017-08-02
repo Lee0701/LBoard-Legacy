@@ -2,4 +2,7 @@
 <input-method xmlns:android="http://schemas.android.com/apk/res/android"
 	android:settingsActivity="me.blog.hgl1002.lboard.gui.LBoardControlPanel">
 
+	<subtype android:name="@string/subtype_name_korean_ime"
+		android:imeSubtypeLocale="ko_KR"
+		android:imeSubtypeMode="keyboard" />
 </input-method>

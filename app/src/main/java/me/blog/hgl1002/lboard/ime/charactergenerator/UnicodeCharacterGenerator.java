@@ -1,9 +1,14 @@
 package me.blog.hgl1002.lboard.ime.charactergenerator;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.ByteBuffer;
 import java.util.EmptyStackException;
 import java.util.Stack;
 
 public class UnicodeCharacterGenerator implements CharacterGenerator {
+
+	public static final String COMBINATION_MAGIC_NUMBER = "LCOM1";
 
 	// 유니코드 낱자를 표시하기 위한 테이블.
 	public static int[] CHO_TABLE = {
@@ -99,6 +104,10 @@ public class UnicodeCharacterGenerator implements CharacterGenerator {
 	 */
 	Stack<History> histories = new Stack<History>();
 
+	public UnicodeCharacterGenerator() {
+		resetComposing();
+	}
+
 	@Override
 	public boolean onCode(long originalCode) {
 		// 입력 기록을 업데이트한다.
@@ -110,7 +119,6 @@ public class UnicodeCharacterGenerator implements CharacterGenerator {
 		int combination;
 		// 세벌식 한글 초성.
 		if(isCho(code)) {
-			// 마이너스 가상 낱자이면 코드를 그대로 넘긴다.
 			int choCode = code - 0x1100;
 				if (!moachigi && !isCho(last) && !isJung(last)) resetComposing();
 				if (!moachigi && !isCho(last)) resetComposing();
@@ -154,7 +162,7 @@ public class UnicodeCharacterGenerator implements CharacterGenerator {
 			// 세벌식 한글 종성.
 		} else if(code >= 0x11a8 && code <= 0x11ff) {
 			int jongCode = code - 0x11a7;
-			if(!moachigi && !isJung(last) && !isJong(last)) resetComposing();
+			if(!moachigi && (jung == -1 || cho == -1)) resetComposing();
 			if(isJong(last)) {
 				int source = this.jong + 0x11a7;
 				if((combination = getCombination(source, code)) != -1) {
@@ -334,17 +342,20 @@ public class UnicodeCharacterGenerator implements CharacterGenerator {
 				return false;
 			}
 			// 마지막 하나가 남았을 걥우 비운다.
-			else composing = "";
+			else resetComposing();
+			return false;
 		}
 		// 백스페이스를 실행한 결과를 표시한다.
 		if(listener != null) listener.onCompose(composing);
-		// 신세벌식용. 자모 세트에서 테이블을 교환한다.
 		return true;
 	}
 
 	@Override
 	public void resetComposing() {
-
+		if(listener != null) listener.onCommit();
+		cho = jung = jong = -1;
+		composing = "";
+		histories.clear();
 	}
 
 	int getCombination(int a, int b) {
@@ -463,6 +474,38 @@ public class UnicodeCharacterGenerator implements CharacterGenerator {
 	@Override
 	public void removeListener() {
 		this.listener = null;
+	}
+
+	public static int[][] loadCombinationTable(InputStream inputStream) {
+		try {
+			byte[] data = new byte[inputStream.available()];
+			inputStream.read(data);
+			ByteBuffer buffer = ByteBuffer.wrap(data);
+			for(int i = 0 ; i < COMBINATION_MAGIC_NUMBER.length() ; i++) {
+				char c = (char) buffer.get();
+				if(c != COMBINATION_MAGIC_NUMBER.charAt(i)) {
+					throw new RuntimeException("Layout file must start with String \"" + COMBINATION_MAGIC_NUMBER + "\"!");
+				}
+			}
+			for(int i = 0 ; i < 0x10 - COMBINATION_MAGIC_NUMBER.length() ; i++) {
+				buffer.get();
+			}
+			int[][] combinations = new int[buffer.remaining() / 4 / 2][3];
+			for(int i = 0 ; i < combinations.length ; i++) {
+				if(buffer.remaining() < 0x08) break;
+				buffer.getChar();
+				int a = buffer.getChar();
+				int b = buffer.getChar();
+				int result = buffer.getChar();
+				combinations[i][0] = a;
+				combinations[i][1] = b;
+				combinations[i][2] = result;
+			}
+			return combinations;
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return null;
 	}
 
 	public String getComposing() {

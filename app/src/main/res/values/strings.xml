@@ -3,6 +3,8 @@
 
 	<string name="service_label">LBoard</string>
 
+	<string name="subtype_name_korean_ime">Korean</string>
+
 	<string name="cp_settings_app_label">LBoard Settings</string>
 
 </resources>
