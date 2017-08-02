@@ -4,7 +4,6 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.inputmethodservice.Keyboard;
 import android.inputmethodservice.KeyboardView;
-import android.os.SystemClock;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,10 +12,12 @@ import android.widget.LinearLayout;
 
 import me.blog.hgl1002.lboard.LBoard;
 import me.blog.hgl1002.lboard.R;
-import me.blog.hgl1002.lboard.ime.KeyEventInfo;
 import me.blog.hgl1002.lboard.ime.SoftKeyboard;
 
 public class DefaultSoftKeyboard implements SoftKeyboard, KeyboardView.OnKeyboardActionListener {
+
+	public static final int SHIFT_OFF = 0;
+	public static final int SHIFT_ON = 1;
 
 	LBoard parent;
 
@@ -45,6 +46,10 @@ public class DefaultSoftKeyboard implements SoftKeyboard, KeyboardView.OnKeyboar
 	protected Keyboard currentUpperKeyboard;
 	protected Keyboard currentLowerKeyboard;
 
+	protected Keyboard[] mainKeyboards;
+	protected Keyboard[] upperKeyboards;
+	protected Keyboard[] lowerKeyboards;
+
 	protected boolean shiftPressed;
 
 	public DefaultSoftKeyboard(LBoard parent) {
@@ -68,15 +73,37 @@ public class DefaultSoftKeyboard implements SoftKeyboard, KeyboardView.OnKeyboar
 		this.mainView = mainView;
 
 		createKeyboards(context);
-		mainKeyboardView.setKeyboard(currentMainKeyboard);
-		lowerKeyboardView.setKeyboard(currentLowerKeyboard);
+		setDefaultKeyboards();
 
 		return mainView;
 	}
 
+	public void setShiftState(boolean shiftOn) {
+		this.shiftPressed = shiftOn;
+		currentMainKeyboard = mainKeyboards[shiftOn ? SHIFT_ON : SHIFT_OFF];
+		currentMainKeyboard.setShifted(shiftOn);
+		currentLowerKeyboard.setShifted(shiftOn);
+		setCurrentKeyboards();
+	}
+
+	public void setCurrentKeyboards() {
+		mainKeyboardView.setKeyboard(currentMainKeyboard);
+		lowerKeyboardView.setKeyboard(currentLowerKeyboard);
+	}
+
+	public void setDefaultKeyboards() {
+		currentMainKeyboard = mainKeyboards[SHIFT_OFF];
+		currentLowerKeyboard = lowerKeyboards[0];
+
+		setCurrentKeyboards();
+	}
+
 	public void createKeyboards(Context context) {
-		currentMainKeyboard = new Keyboard(context, R.xml.keyboard_qwerty);
-		currentLowerKeyboard = new Keyboard(context, R.xml.keyboard_lower);
+		mainKeyboards = new Keyboard[2];
+		lowerKeyboards = new Keyboard[1];
+		mainKeyboards[SHIFT_OFF] = new Keyboard(context, R.xml.keyboard_sebeol_final);
+		mainKeyboards[SHIFT_ON] = new Keyboard(context, R.xml.keyboard_sebeol_final_shift);
+		lowerKeyboards[0] = new Keyboard(context, R.xml.keyboard_lower_default);
 	}
 
 	@Override
@@ -107,7 +134,7 @@ public class DefaultSoftKeyboard implements SoftKeyboard, KeyboardView.OnKeyboar
 		switch(primaryCode) {
 		case KeyEvent.KEYCODE_SHIFT_LEFT:
 		case KeyEvent.KEYCODE_SHIFT_RIGHT:
-			shiftPressed = !shiftPressed;
+			setShiftState(!shiftPressed);
 			parent.onKeyEvent(new KeyEvent(shiftPressed ? KeyEvent.ACTION_DOWN : KeyEvent.ACTION_UP, primaryCode), false);
 			return;
 		}

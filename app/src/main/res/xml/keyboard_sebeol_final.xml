@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Keyboard xmlns:android="http://schemas.android.com/apk/res/android"
+	android:keyWidth="10%p"
+	android:horizontalGap="0dip"
+	android:verticalGap="0dip"
+	android:keyHeight="50dip">
+
+	<Row android:rowEdgeFlags="top">
+		<Key android:codes="8" android:keyLabel="ㅎ" android:keyEdgeFlags="left"/>
+		<Key android:codes="9" android:keyLabel="ㅆ"/>
+		<Key android:codes="10" android:keyLabel="ㅂ"/>
+		<Key android:codes="11" android:keyLabel="ㅛ"/>
+		<Key android:codes="12" android:keyLabel="ㅠ"/>
+		<Key android:codes="13" android:keyLabel="ㅑ"/>
+		<Key android:codes="14" android:keyLabel="ㅖ"/>
+		<Key android:codes="15" android:keyLabel="ㅢ"/>
+		<Key android:codes="16" android:keyLabel="ㅜ"/>
+		<Key android:codes="7" android:keyLabel="ㅋ" android:keyEdgeFlags="right"/>
+	</Row>
+
+	<Row>
+		<Key android:codes="45" android:keyLabel="ㅅ" android:keyEdgeFlags="left"/>
+		<Key android:codes="51" android:keyLabel="ㄹ"/>
+		<Key android:codes="33" android:keyLabel="ㅕ"/>
+		<Key android:codes="46" android:keyLabel="ㅐ"/>
+		<Key android:codes="48" android:keyLabel="ㅓ"/>
+		<Key android:codes="53" android:keyLabel="ㄹ"/>
+		<Key android:codes="48" android:keyLabel="ㄷ"/>
+		<Key android:codes="37" android:keyLabel="ㅁ"/>
+		<Key android:codes="43" android:keyLabel="ㅊ"/>
+		<Key android:codes="44" android:keyLabel="ㅍ" android:keyEdgeFlags="right"/>
+	</Row>
+
+	<Row>
+		<Key android:codes="29" android:keyLabel="ㅇ" android:keyEdgeFlags="left"/>
+		<Key android:codes="47" android:keyLabel="ㄴ"/>
+		<Key android:codes="32" android:keyLabel="ㅣ"/>
+		<Key android:codes="34" android:keyLabel="ㅏ"/>
+		<Key android:codes="35" android:keyLabel="ㅡ"/>
+		<Key android:codes="36" android:keyLabel="ㄴ"/>
+		<Key android:codes="38" android:keyLabel="ㅇ"/>
+		<Key android:codes="39" android:keyLabel="ㄱ"/>
+		<Key android:codes="40" android:keyLabel="ㅈ"/>
+		<Key android:codes="74" android:keyLabel="ㅂ" android:keyEdgeFlags="right"/>
+	</Row>
+
+	<Row android:rowEdgeFlags="bottom">
+		<Key android:codes="54" android:keyLabel="ㅁ" android:keyEdgeFlags="left"/>
+		<Key android:codes="52" android:keyLabel="ㄱ"/>
+		<Key android:codes="31" android:keyLabel="ㅔ"/>
+		<Key android:codes="50" android:keyLabel="ㅗ"/>
+		<Key android:codes="30" android:keyLabel="ㅜ"/>
+		<Key android:codes="42" android:keyLabel="ㅅ"/>
+		<Key android:codes="41" android:keyLabel="ㅎ"/>
+		<Key android:codes="75" android:keyLabel="ㅌ"/>
+		<Key android:codes="76" android:keyLabel="ㅗ"/>
+		<Key android:codes="67" android:keyLabel="DEL"
+			android:keyWidth="10%p" android:isRepeatable="true"
+			android:keyEdgeFlags="right"/>
+	</Row>
+
+</Keyboard>
