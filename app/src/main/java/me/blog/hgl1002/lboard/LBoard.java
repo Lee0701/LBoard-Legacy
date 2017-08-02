@@ -1,9 +1,11 @@
 package me.blog.hgl1002.lboard;
 
 import android.inputmethodservice.InputMethodService;
+import android.os.IBinder;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
 
 import me.blog.hgl1002.lboard.ime.SoftKeyboard;
 import me.blog.hgl1002.lboard.ime.charactergenerator.CharacterGenerator;
@@ -20,6 +22,8 @@ public class LBoard extends InputMethodService {
 	protected SoftKeyboard softKeyboard;
 	protected HardKeyboard hardKeyboard;
 	protected CharacterGenerator characterGenerator;
+
+	private boolean inputted = false;
 
 	public LBoard() {
 	}
@@ -68,6 +72,17 @@ public class LBoard extends InputMethodService {
 	public boolean onKeyEvent(KeyEvent event, boolean hardKey) {
 		boolean ret = false;
 		switch(event.getKeyCode()) {
+		case -500:
+			if(event.getAction() == KeyEvent.ACTION_DOWN) {
+				InputMethodManager manager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+				IBinder token = getWindow().getWindow().getAttributes().token;
+				if(inputted) {
+					manager.switchToLastInputMethod(token);
+				} else {
+					manager.switchToNextInputMethod(token, false);
+				}
+			}
+			return true;
 		case KeyEvent.KEYCODE_DEL:
 			if(event.getAction() == KeyEvent.ACTION_DOWN) {
 				if (!characterGenerator.backspace()) {
@@ -76,6 +91,7 @@ public class LBoard extends InputMethodService {
 			}
 			return true;
 		}
+		inputted = true;
 		ret = hardKeyboard.onKeyEvent(
 				event, new KeyEventInfo.Builder().setKeyType(hardKey ? KeyEventInfo.KEYTYPE_HARDKEY : KeyEventInfo.KEYTYPE_SOFTKEY).build());
 		return ret;

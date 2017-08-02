@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <input-method xmlns:android="http://schemas.android.com/apk/res/android"
-	android:settingsActivity="me.blog.hgl1002.lboard.gui.LBoardControlPanel">
+	android:settingsActivity="me.blog.hgl1002.lboard.gui.LBoardControlPanel"
+	android:supportsSwitchingToNextInputMethod="true">
 
 	<subtype android:name="@string/subtype_name_korean_ime"
 		android:imeSubtypeLocale="ko_KR"
 		android:imeSubtypeMode="keyboard" />
+		
 </input-method>

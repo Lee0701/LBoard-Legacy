@@ -8,8 +8,10 @@
 	<Row android:rowEdgeFlags="top|bottom">
 		<Key android:codes="-114" android:keyLabel="ALT"
 			android:keyWidth="15%p" android:keyEdgeFlags="left"/>
+		<Key android:codes="-500" android:keyLabel="A"/>
 		<Key android:codes="62" android:keyLabel=" "
-			android:keyWidth="70%p"/>
+			android:keyWidth="50%p"/>
+		<Key android:codes="56" android:keyLabel="."/>
 		<Key android:codes="66" android:keyLabel="RET"
 			android:keyWidth="15%p" android:keyEdgeFlags="right"/>
 	</Row>
