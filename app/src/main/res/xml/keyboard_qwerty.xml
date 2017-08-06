@@ -12,7 +12,7 @@
 		<Key android:codes="46" android:keyLabel="r"/>
 		<Key android:codes="48" android:keyLabel="t"/>
 		<Key android:codes="53" android:keyLabel="y"/>
-		<Key android:codes="48" android:keyLabel="u"/>
+		<Key android:codes="49" android:keyLabel="u"/>
 		<Key android:codes="37" android:keyLabel="i"/>
 		<Key android:codes="43" android:keyLabel="o"/>
 		<Key android:codes="44" android:keyLabel="p" android:keyEdgeFlags="right"/>
