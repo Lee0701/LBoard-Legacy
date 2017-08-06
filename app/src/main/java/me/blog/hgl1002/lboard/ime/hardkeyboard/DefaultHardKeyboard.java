@@ -38,7 +38,7 @@ public class DefaultHardKeyboard implements HardKeyboard {
 	public boolean onKeyEvent(KeyEvent event, KeyEventInfo info) {
 		switch (event.getAction()) {
 		case KeyEvent.ACTION_UP:
-			if(!consumeDownEvent) return false;
+			if (!consumeDownEvent) return false;
 			else onKeyUp(event, info);
 			return true;
 
@@ -74,16 +74,16 @@ public class DefaultHardKeyboard implements HardKeyboard {
 			return true;
 
 		default:
-			if(event.isPrintingKey()) {
-				if(mappings != null && characterGenerator != null) {
+			if (event.isPrintingKey()) {
+				if (mappings != null && characterGenerator != null) {
 					int keyCode = event.getKeyCode();
-					if(keyCode >= 0 && keyCode < MAPPINGS_SIZE) {
+					if (keyCode >= 0 && keyCode < MAPPINGS_SIZE) {
 						long mappedCode = mappings[keyCode][shiftPressing ? 1 : 0];
-						if(mappedCode != 0) {
+						if (mappedCode != 0) {
 							boolean ret = characterGenerator.onCode(mappedCode);
-							if(!ret) {
+							if (!ret) {
 								parent.finishComposing();
-								parent.commitText(new String(new char[] {(char) mappedCode}));
+								parent.commitText(new String(new char[]{(char) mappedCode}));
 							}
 						}
 						return true;
@@ -92,7 +92,7 @@ public class DefaultHardKeyboard implements HardKeyboard {
 				char keyChar = (char) event.getUnicodeChar(
 						(shiftPressing || event.isShiftPressed() ? KeyEvent.META_SHIFT_ON : 0) | (altPressing ? KeyEvent.META_ALT_ON : 0));
 				parent.finishComposing();
-				parent.commitText(new String(new char[] {keyChar}));
+				parent.commitText(new String(new char[]{keyChar}));
 				return true;
 			}
 		}
@@ -100,7 +100,7 @@ public class DefaultHardKeyboard implements HardKeyboard {
 	}
 
 	public boolean onKeyUp(KeyEvent event, KeyEventInfo info) {
-		switch(event.getKeyCode()) {
+		switch (event.getKeyCode()) {
 		case KeyEvent.KEYCODE_SHIFT_LEFT:
 		case KeyEvent.KEYCODE_SHIFT_RIGHT:
 			shiftPressing = false;
@@ -120,18 +120,18 @@ public class DefaultHardKeyboard implements HardKeyboard {
 			byte[] data = new byte[inputStream.available()];
 			inputStream.read(data);
 			ByteBuffer buffer = ByteBuffer.wrap(data);
-			for(int i = 0 ; i < LAYOUT_MAGIC_NUMBER.length() ; i++) {
+			for (int i = 0 ; i < LAYOUT_MAGIC_NUMBER.length() ; i++) {
 				char c = (char) buffer.get();
-				if(c != LAYOUT_MAGIC_NUMBER.charAt(i)) {
+				if (c != LAYOUT_MAGIC_NUMBER.charAt(i)) {
 					throw new RuntimeException("Layout file must start with String \"" + LAYOUT_MAGIC_NUMBER + "\"!");
 				}
 			}
-			for(int i = 0 ; i < 0x10 - LAYOUT_MAGIC_NUMBER.length() ; i++) {
+			for (int i = 0 ; i < 0x10 - LAYOUT_MAGIC_NUMBER.length() ; i++) {
 				buffer.get();
 			}
 			long[][] layout = new long[MAPPINGS_SIZE][2];
-			for(int i = 0 ; i < layout.length ; i++) {
-				if(buffer.remaining() < 0x08) break;
+			for (int i = 0 ; i < layout.length ; i++) {
+				if (buffer.remaining() < 0x08) break;
 				long normal = buffer.getLong();
 				long shift = buffer.getLong();
 				layout[i][0] = normal;
