@@ -74,7 +74,6 @@ public class DefaultSoftKeyboard implements SoftKeyboard, KeyboardView.OnKeyboar
 
 		this.mainView = mainView;
 
-		createKeyboards(context);
 		updateLabels();
 		setDefaultKeyboards();
 
@@ -114,12 +113,12 @@ public class DefaultSoftKeyboard implements SoftKeyboard, KeyboardView.OnKeyboar
 		setCurrentKeyboards();
 	}
 
-	public void createKeyboards(Context context) {
+	public void createKeyboards(Context context, int main, int mainShift, int lower) {
 		mainKeyboards = new Keyboard[2];
 		lowerKeyboards = new Keyboard[1];
-		mainKeyboards[SHIFT_OFF] = new Keyboard(context, R.xml.keyboard_sebeol_final);
-		mainKeyboards[SHIFT_ON] = new Keyboard(context, R.xml.keyboard_sebeol_final_shift);
-		lowerKeyboards[0] = new Keyboard(context, R.xml.keyboard_lower_default);
+		mainKeyboards[SHIFT_OFF] = new Keyboard(context, main);
+		mainKeyboards[SHIFT_ON] = new Keyboard(context, mainShift);
+		lowerKeyboards[0] = new Keyboard(context, lower);
 	}
 
 	@Override
