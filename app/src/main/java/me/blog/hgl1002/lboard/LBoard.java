@@ -85,7 +85,18 @@ public class LBoard extends InputMethodService {
 		});
 		generator.setCombinationTable(UnicodeCharacterGenerator.loadCombinationTable(getResources().openRawResource(R.raw.comb_sebeol)));
 		hardKeyboard.setCharacterGenerator(generator);
-		hardKeyboard.setMappings(DefaultHardKeyboard.loadMappings(getResources().openRawResource(R.raw.layout_sebeol_final)));
+		hardKeyboard.setMappings(DefaultHardKeyboard.loadMappings(getResources().openRawResource(R.raw.layout_qwerty)));
+
+		CharSequence[][] labels = new CharSequence[0x100][2];
+		for(int i = 0 ; i < labels.length ; i++) {
+			for(int j = 0 ; j < labels[i].length ; j++) {
+				long mapping = hardKeyboard.getMappings()[i][j];
+				if(mapping != 0) labels[i][j] = new String(new char[] {(char) mapping});
+				else labels[i][j] = null;
+			}
+		}
+		softKeyboard.setLabels(labels);
+
 		this.softKeyboard = softKeyboard;
 		this.hardKeyboard = hardKeyboard;
 		this.characterGenerator = generator;

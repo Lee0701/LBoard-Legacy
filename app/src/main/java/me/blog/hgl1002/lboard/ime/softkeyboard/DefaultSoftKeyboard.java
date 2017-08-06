@@ -50,6 +50,8 @@ public class DefaultSoftKeyboard implements SoftKeyboard, KeyboardView.OnKeyboar
 	protected Keyboard[] upperKeyboards;
 	protected Keyboard[] lowerKeyboards;
 
+	protected CharSequence[][] labels;
+
 	protected boolean shiftPressed;
 
 	public DefaultSoftKeyboard(LBoard parent) {
@@ -73,9 +75,23 @@ public class DefaultSoftKeyboard implements SoftKeyboard, KeyboardView.OnKeyboar
 		this.mainView = mainView;
 
 		createKeyboards(context);
+		updateLabels();
 		setDefaultKeyboards();
 
 		return mainView;
+	}
+
+	public void updateLabels() {
+		if(labels == null) return;
+		for(int shift = 0 ; shift < 2 ; shift++) {
+			for (Keyboard.Key key : mainKeyboards[shift].getKeys()) {
+				int code = key.codes[0];
+				try {
+					CharSequence label = labels[code][shift];
+					if(label != null) key.label = label;
+				} catch (ArrayIndexOutOfBoundsException e) {}
+			}
+		}
 	}
 
 	public void setShiftState(boolean shiftOn) {
@@ -167,5 +183,13 @@ public class DefaultSoftKeyboard implements SoftKeyboard, KeyboardView.OnKeyboar
 	@Override
 	public void swipeUp() {
 
+	}
+
+	public CharSequence[][] getLabels() {
+		return labels;
+	}
+
+	public void setLabels(CharSequence[][] labels) {
+		this.labels = labels;
 	}
 }
