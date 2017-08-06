@@ -81,13 +81,6 @@ public class DefaultSearchViewManager implements SearchViewManager, SearchEngine
 		sendButton.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				parent.sendSearchResult(url);
-				parent.hideSearchView();
-			}
-		});
-		sendButton.setOnLongClickListener(new View.OnLongClickListener() {
-			@Override
-			public boolean onLongClick(View v) {
 				PopupMenu popup = new PopupMenu(parent, sendButton);
 				popup.getMenuInflater().inflate(R.menu.send_button_popup, popup.getMenu());
 
@@ -96,7 +89,8 @@ public class DefaultSearchViewManager implements SearchViewManager, SearchEngine
 					public boolean onMenuItemClick(MenuItem item) {
 						switch(item.getItemId()) {
 						case R.id.send_link:
-							sendButton.callOnClick();
+							parent.sendSearchResult(url);
+							parent.hideSearchView();
 							break;
 						case R.id.send_capture:
 							parent.sendSearchResult(webView.screenshot());
@@ -107,7 +101,6 @@ public class DefaultSearchViewManager implements SearchViewManager, SearchEngine
 					}
 				});
 				popup.show();
-				return true;
 			}
 		});
 
