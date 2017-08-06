@@ -4,8 +4,10 @@ import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
 import android.os.Build;
 import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.WebResourceRequest;
@@ -13,6 +15,7 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Button;
 import android.widget.LinearLayout;
+import android.widget.PopupMenu;
 import android.widget.TextView;
 
 import me.blog.hgl1002.lboard.LBoard;
@@ -28,7 +31,7 @@ public class DefaultSearchViewManager implements SearchViewManager, SearchEngine
 	TextView searchText;
 
 	ViewGroup resultsView;
-	WebView webView;
+	DefaultWebSearchView webView;
 
 	SearchEngine searchEngine;
 
@@ -49,7 +52,7 @@ public class DefaultSearchViewManager implements SearchViewManager, SearchEngine
 		searchText = (TextView) searchBox.findViewById(R.id.search_text);
 
 		resultsView = (ViewGroup) LayoutInflater.from(context).inflate(R.layout.search_result, mainView);
-		webView = (WebView) resultsView.findViewById(R.id.webview);
+		webView = (DefaultWebSearchView) resultsView.findViewById(R.id.webview);
 		webView.getSettings().setJavaScriptEnabled(true);
 		webView.getSettings().setDefaultTextEncodingName("utf-8");
 		webView.setHorizontalScrollBarEnabled(false);
@@ -73,12 +76,37 @@ public class DefaultSearchViewManager implements SearchViewManager, SearchEngine
 			}
 		});
 
-		Button sendButton = (Button) resultsView.findViewById(R.id.send_result);
+		final Button sendButton = (Button) resultsView.findViewById(R.id.send_result);
 		sendButton.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
 				parent.sendSearchResult(url);
 				parent.hideSearchView();
+			}
+		});
+		sendButton.setOnLongClickListener(new View.OnLongClickListener() {
+			@Override
+			public boolean onLongClick(View v) {
+				PopupMenu popup = new PopupMenu(parent, sendButton);
+				popup.getMenuInflater().inflate(R.menu.send_button_popup, popup.getMenu());
+
+				popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+					@Override
+					public boolean onMenuItemClick(MenuItem item) {
+						switch(item.getItemId()) {
+						case R.id.send_link:
+							sendButton.callOnClick();
+							break;
+						case R.id.send_capture:
+							parent.sendSearchResult(webView.screenshot());
+							parent.hideSearchView();
+							break;
+						}
+						return true;
+					}
+				});
+				popup.show();
+				return true;
 			}
 		});
 

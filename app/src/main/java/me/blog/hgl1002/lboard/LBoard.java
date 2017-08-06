@@ -1,7 +1,19 @@
 package me.blog.hgl1002.lboard;
 
+import android.Manifest;
+import android.content.ClipDescription;
+import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.inputmethodservice.InputMethodService;
+import android.net.Uri;
+import android.os.Build;
 import android.os.IBinder;
+import android.provider.MediaStore;
+import android.support.v13.view.inputmethod.EditorInfoCompat;
+import android.support.v13.view.inputmethod.InputConnectionCompat;
+import android.support.v13.view.inputmethod.InputContentInfoCompat;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
@@ -15,6 +27,9 @@ import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 
+import java.io.ByteArrayOutputStream;
+import java.util.logging.Logger;
+
 import me.blog.hgl1002.lboard.ime.SoftKeyboard;
 import me.blog.hgl1002.lboard.ime.charactergenerator.CharacterGenerator;
 import me.blog.hgl1002.lboard.ime.charactergenerator.UnicodeCharacterGenerator;
@@ -27,7 +42,6 @@ import me.blog.hgl1002.lboard.search.DefaultSearchViewManager;
 import me.blog.hgl1002.lboard.search.SearchEngine;
 import me.blog.hgl1002.lboard.search.SearchViewManager;
 import me.blog.hgl1002.lboard.search.engines.GoogleWebSearchEngine;
-
 
 public class LBoard extends InputMethodService {
 
@@ -144,9 +158,14 @@ public class LBoard extends InputMethodService {
 	}
 
 	@Override
+	public void onStartInputView(EditorInfo info, boolean restarting) {
+		super.onStartInputView(info, restarting);
+	}
+
+	@Override
 	public void onStartInput(EditorInfo attribute, boolean restarting) {
 		super.onStartInput(attribute, restarting);
-		characterGenerator.resetComposing();
+		if(getCurrentInputConnection() != null) characterGenerator.resetComposing();
 	}
 
 	public boolean onKeyEvent(KeyEvent event, boolean hardKey) {
@@ -221,6 +240,9 @@ public class LBoard extends InputMethodService {
 		InputConnection ic = getCurrentInputConnection();
 		if(object instanceof String) {
 			ic.commitText((String) object, 1);
+		} else if(object instanceof Bitmap) {
+			Uri uri = getBitmapUri((Bitmap) object);
+			if(uri !=  null) commitImage("image/png", uri, "");
 		}
 	}
 
@@ -269,8 +291,48 @@ public class LBoard extends InputMethodService {
 		}
 	}
 
+	public void commitImage(String mimeType, Uri contentUri, String imageDescription) {
+		String[] mimeTypes = EditorInfoCompat.getContentMimeTypes(getCurrentInputEditorInfo());
+		boolean supported = false;
+		for(String type : mimeTypes) {
+			System.out.println(type);
+			if(ClipDescription.compareMimeTypes(type, mimeType)) {
+				supported = true;
+			}
+		}
+		if(!supported) {
+			System.err.println("Mime type " + mimeType + " is not supported!");
+			return;
+		}
+		InputContentInfoCompat inputContentInfo = new InputContentInfoCompat(
+				contentUri,
+				new ClipDescription(imageDescription, new String[] {mimeType}),
+				null);
+		InputConnection ic = getCurrentInputConnection();
+		EditorInfo info = getCurrentInputEditorInfo();
+		int flags = 0;
+		if(Build.VERSION.SDK_INT >= 25) {
+			flags |= InputConnectionCompat.INPUT_CONTENT_GRANT_READ_URI_PERMISSION;
+		}
+		InputConnectionCompat.commitContent(
+				ic, info, inputContentInfo, flags, null);
+	}
+
 	public void finishComposing() {
 		characterGenerator.resetComposing();
+	}
+
+	public Uri getBitmapUri(Bitmap bitmap) {
+		if(!requestPermissions(Manifest.permission.WRITE_EXTERNAL_STORAGE, "")) return null;
+		ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+		bitmap.compress(Bitmap.CompressFormat.PNG, 100, bytes);
+		String path = MediaStore.Images.Media.insertImage(getContentResolver(), bitmap, "web_capture", null);
+		return Uri.parse(path);
+	}
+
+	protected boolean requestPermissions(String permission, String rationale) {
+		int permissionCheck = ContextCompat.checkSelfPermission(this, permission);
+		return permissionCheck == PackageManager.PERMISSION_GRANTED;
 	}
 
 }
