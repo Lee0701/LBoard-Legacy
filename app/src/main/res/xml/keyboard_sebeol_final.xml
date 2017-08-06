@@ -25,7 +25,7 @@
 		<Key android:codes="46" android:keyLabel="ㅐ"/>
 		<Key android:codes="48" android:keyLabel="ㅓ"/>
 		<Key android:codes="53" android:keyLabel="ㄹ"/>
-		<Key android:codes="48" android:keyLabel="ㄷ"/>
+		<Key android:codes="49" android:keyLabel="ㄷ"/>
 		<Key android:codes="37" android:keyLabel="ㅁ"/>
 		<Key android:codes="43" android:keyLabel="ㅊ"/>
 		<Key android:codes="44" android:keyLabel="ㅍ" android:keyEdgeFlags="right"/>
