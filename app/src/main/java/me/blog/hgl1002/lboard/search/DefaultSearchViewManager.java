@@ -54,7 +54,6 @@ public class DefaultSearchViewManager implements SearchViewManager, SearchEngine
 		webView.getSettings().setDefaultTextEncodingName("utf-8");
 		webView.setHorizontalScrollBarEnabled(false);
 		webView.setVerticalScrollBarEnabled(true);
-		webView.setBackgroundColor(0);
 		webView.setWebViewClient(new WebViewClient() {
 			@TargetApi(21)
 			@Override
