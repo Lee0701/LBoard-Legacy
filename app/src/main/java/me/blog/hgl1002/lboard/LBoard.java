@@ -12,7 +12,6 @@ import android.provider.MediaStore;
 import android.support.v13.view.inputmethod.EditorInfoCompat;
 import android.support.v13.view.inputmethod.InputConnectionCompat;
 import android.support.v13.view.inputmethod.InputContentInfoCompat;
-import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
@@ -22,20 +21,20 @@ import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 
 import java.io.ByteArrayOutputStream;
-import java.util.logging.Logger;
 
-import me.blog.hgl1002.lboard.ime.SoftKeyboard;
+import java.util.ArrayList;
+import java.util.List;
+
+import me.blog.hgl1002.lboard.ime.LBoardInputMethod;
 import me.blog.hgl1002.lboard.ime.charactergenerator.CharacterGenerator;
 import me.blog.hgl1002.lboard.ime.charactergenerator.UnicodeCharacterGenerator;
 import me.blog.hgl1002.lboard.ime.softkeyboard.DefaultSoftKeyboard;
 
-import me.blog.hgl1002.lboard.ime.HardKeyboard;
 import me.blog.hgl1002.lboard.ime.KeyEventInfo;
 import me.blog.hgl1002.lboard.ime.hardkeyboard.DefaultHardKeyboard;
 import me.blog.hgl1002.lboard.search.DefaultSearchViewManager;
@@ -49,13 +48,13 @@ public class LBoard extends InputMethodService {
 	protected View keyboardView;
 	protected View searchView;
 
-	protected Button searchButton;
-
-	protected SoftKeyboard softKeyboard;
-	protected HardKeyboard hardKeyboard;
-	protected CharacterGenerator characterGenerator;
-
 	protected SearchViewManager searchViewManager;
+
+	protected List<LBoardInputMethod> inputMethods;
+	protected int currentInputMethodId;
+	protected LBoardInputMethod currentInputMethod;
+
+	protected Button searchButton;
 
 	Animation slideUp, slideDown;
 
@@ -63,7 +62,31 @@ public class LBoard extends InputMethodService {
 	private boolean searchViewShown = false;
 	private String searchText = "", searchTextComposing = "";
 
+	protected CharacterGenerator.CharacterGeneratorListener characterGeneratorListener
+			 = new CharacterGenerator.CharacterGeneratorListener() {
+		@Override
+		public void onCompose(String composing) {
+			if(searchViewShown) {
+				searchTextComposing = composing;
+				searchViewManager.setText(searchText + searchTextComposing);
+			} else {
+				getCurrentInputConnection().setComposingText(composing, 1);
+			}
+		}
+
+		@Override
+		public void onCommit() {
+			if(searchViewShown) {
+				searchText += searchTextComposing;
+				searchTextComposing = "";
+			} else {
+				getCurrentInputConnection().finishComposingText();
+			}
+		}
+	};
+
 	public LBoard() {
+		inputMethods = new ArrayList<>();
 	}
 
 	@Override
@@ -76,31 +99,12 @@ public class LBoard extends InputMethodService {
 		DefaultSoftKeyboard softKeyboard = new DefaultSoftKeyboard(this);
 		DefaultHardKeyboard hardKeyboard = new DefaultHardKeyboard(this);
 		UnicodeCharacterGenerator generator = new UnicodeCharacterGenerator();
-		generator.setListener(new CharacterGenerator.CharacterGeneratorListener() {
-			@Override
-			public void onCompose(String composing) {
-				if(searchViewShown) {
-					searchTextComposing = composing;
-					searchViewManager.setText(searchText + searchTextComposing);
-				} else {
-					getCurrentInputConnection().setComposingText(composing, 1);
-				}
-			}
-
-			@Override
-			public void onCommit() {
-				if(searchViewShown) {
-					searchText += searchTextComposing;
-					searchTextComposing = "";
-				} else {
-					getCurrentInputConnection().finishComposingText();
-				}
-			}
-		});
+		generator.setListener(characterGeneratorListener);
 		generator.setCombinationTable(UnicodeCharacterGenerator.loadCombinationTable(getResources().openRawResource(R.raw.comb_sebeol)));
 		hardKeyboard.setCharacterGenerator(generator);
-		hardKeyboard.setMappings(DefaultHardKeyboard.loadMappings(getResources().openRawResource(R.raw.layout_qwerty)));
+		hardKeyboard.setMappings(DefaultHardKeyboard.loadMappings(getResources().openRawResource(R.raw.layout_sebeol_final)));
 
+		softKeyboard.createKeyboards(this, R.xml.keyboard_sebeol_final, R.xml.keyboard_sebeol_final_shift, R.xml.keyboard_lower_default);
 		CharSequence[][] labels = new CharSequence[0x100][2];
 		for(int i = 0 ; i < labels.length ; i++) {
 			for(int j = 0 ; j < labels[i].length ; j++) {
@@ -111,9 +115,22 @@ public class LBoard extends InputMethodService {
 		}
 		softKeyboard.setLabels(labels);
 
-		this.softKeyboard = softKeyboard;
-		this.hardKeyboard = hardKeyboard;
-		this.characterGenerator = generator;
+		LBoardInputMethod sebeolFinal = new LBoardInputMethod("Sebeolsik Final", softKeyboard, hardKeyboard, generator);
+
+		softKeyboard = new DefaultSoftKeyboard(this);
+		hardKeyboard = new DefaultHardKeyboard(this);
+		generator = new UnicodeCharacterGenerator();
+		generator.setListener(characterGeneratorListener);
+		hardKeyboard.setMappings(DefaultHardKeyboard.loadMappings(getResources().openRawResource(R.raw.layout_qwerty)));
+
+		softKeyboard.createKeyboards(this, R.xml.keyboard_qwerty, R.xml.keyboard_qwerty, R.xml.keyboard_lower_default);
+
+		LBoardInputMethod qwerty = new LBoardInputMethod("Qwerty", softKeyboard, hardKeyboard, generator);
+
+		inputMethods.add(qwerty);
+		inputMethods.add(sebeolFinal);
+
+		currentInputMethod = inputMethods.get(currentInputMethodId);
 
 		SearchEngine engine = new GoogleWebSearchEngine();
 		searchViewManager = new DefaultSearchViewManager(this, engine);
@@ -126,15 +143,11 @@ public class LBoard extends InputMethodService {
 
 	@Override
 	public View onCreateInputView() {
-		mainInputView = new FrameLayout(this);
-		LinearLayout linearLayout = new LinearLayout(this);
-		linearLayout.setOrientation(LinearLayout.VERTICAL);
+		mainInputView = (FrameLayout) getLayoutInflater().inflate(R.layout.main_input, null);
+		LinearLayout linearLayout = (LinearLayout) mainInputView.findViewById(R.id.main_linear);
+		searchButton = (Button) linearLayout.findViewById(R.id.search_button);
 
-		searchButton = new Button(this);
-		linearLayout.addView(searchButton);
-
-		keyboardView = softKeyboard.createView(this);
-		linearLayout.addView(keyboardView);
+		updateInputView();
 
 		searchButton.setOnTouchListener(new View.OnTouchListener() {
 			@Override
@@ -153,8 +166,16 @@ public class LBoard extends InputMethodService {
 		searchView = searchViewManager.createView(this);
 		mainInputView.addView(searchView);
 
-		mainInputView.addView(linearLayout);
+		linearLayout.bringToFront();
+
 		return this.mainInputView;
+	}
+
+	public void updateInputView() {
+		FrameLayout placeholder = (FrameLayout) mainInputView.findViewById(R.id.keyboard_placeholder);
+		placeholder.removeAllViews();
+		keyboardView = currentInputMethod.getSoftKeyboard().createView(this);
+		placeholder.addView(keyboardView);
 	}
 
 	@Override
@@ -165,7 +186,7 @@ public class LBoard extends InputMethodService {
 	@Override
 	public void onStartInput(EditorInfo attribute, boolean restarting) {
 		super.onStartInput(attribute, restarting);
-		if(getCurrentInputConnection() != null) characterGenerator.resetComposing();
+		if(getCurrentInputConnection() != null) currentInputMethod.getCharacterGenerator().resetComposing();
 	}
 
 	public boolean onKeyEvent(KeyEvent event, boolean hardKey) {
@@ -180,18 +201,21 @@ public class LBoard extends InputMethodService {
 			break;
 		case -500:
 			if(event.getAction() == KeyEvent.ACTION_DOWN) {
-				InputMethodManager manager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
-				IBinder token = getWindow().getWindow().getAttributes().token;
-				if(inputted) {
-					manager.switchToLastInputMethod(token);
-				} else {
-					manager.switchToNextInputMethod(token, false);
-				}
+//				InputMethodManager manager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+//				IBinder token = getWindow().getWindow().getAttributes().token;
+//				if(inputted) {
+//					manager.switchToLastInputMethod(token);
+//				} else {
+//					manager.switchToNextInputMethod(token, false);
+//				}
+				if(++currentInputMethodId >= 2) currentInputMethodId = 0;
+				currentInputMethod = inputMethods.get(currentInputMethodId);
+				updateInputView();
 			}
 			return true;
 		case KeyEvent.KEYCODE_DEL:
 			if(event.getAction() == KeyEvent.ACTION_DOWN) {
-				if (!characterGenerator.backspace()) {
+				if (!currentInputMethod.getCharacterGenerator().backspace()) {
 					if(searchViewShown) {
 						if(searchText.length() > 0) searchText = searchText.substring(0, searchText.length()-1);
 						searchViewManager.setText(searchText + searchTextComposing);
@@ -203,7 +227,7 @@ public class LBoard extends InputMethodService {
 			return true;
 		}
 		inputted = true;
-		ret = hardKeyboard.onKeyEvent(
+		ret = currentInputMethod.getHardKeyboard().onKeyEvent(
 				event, new KeyEventInfo.Builder().setKeyType(hardKey ? KeyEventInfo.KEYTYPE_HARDKEY : KeyEventInfo.KEYTYPE_SOFTKEY).build());
 
 		if(searchViewShown && !ret) {
@@ -319,7 +343,7 @@ public class LBoard extends InputMethodService {
 	}
 
 	public void finishComposing() {
-		characterGenerator.resetComposing();
+		currentInputMethod.getCharacterGenerator().resetComposing();
 	}
 
 	public Uri getBitmapUri(Bitmap bitmap) {
