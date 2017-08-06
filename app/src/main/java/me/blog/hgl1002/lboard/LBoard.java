@@ -149,17 +149,15 @@ public class LBoard extends InputMethodService {
 
 		updateInputView();
 
-		searchButton.setOnTouchListener(new View.OnTouchListener() {
+		searchButton.setOnClickListener(new View.OnClickListener() {
 			@Override
-			public boolean onTouch(View v, MotionEvent event) {
-				if(event.getAction() != MotionEvent.ACTION_DOWN) return false;
+			public void onClick(View v) {
 				searchViewShown = !searchViewShown;
 				if(searchViewShown) {
 					v.setVisibility(View.INVISIBLE);
 				} else {
 					v.setVisibility(View.VISIBLE);
 				}
-				return false;
 			}
 		});
 
@@ -230,19 +228,21 @@ public class LBoard extends InputMethodService {
 		ret = currentInputMethod.getHardKeyboard().onKeyEvent(
 				event, new KeyEventInfo.Builder().setKeyType(hardKey ? KeyEventInfo.KEYTYPE_HARDKEY : KeyEventInfo.KEYTYPE_SOFTKEY).build());
 
-		if(searchViewShown && !ret) {
-			switch (event.getKeyCode()) {
-			case KeyEvent.KEYCODE_ENTER:
-				finishComposing();
-				search();
-				break;
+		if(event.getAction() == KeyEvent.ACTION_DOWN) {
+			if (searchViewShown && !ret) {
+				switch (event.getKeyCode()) {
+				case KeyEvent.KEYCODE_ENTER:
+					finishComposing();
+					search();
+					break;
 
-			case KeyEvent.KEYCODE_SPACE:
-				finishComposing();
-				searchText += " ";
-				break;
+				case KeyEvent.KEYCODE_SPACE:
+					finishComposing();
+					searchText += " ";
+					break;
+				}
+				return true;
 			}
-			return true;
 		}
 
 		return ret;

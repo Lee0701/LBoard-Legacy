@@ -23,6 +23,7 @@ public class DefaultWebSearchView extends WebView {
 		Canvas canvas = new Canvas(bitmap);
 		Paint paint = new Paint();
 		int iHeight = bitmap.getHeight();
+		canvas.translate(0, -getScrollY());
 		canvas.drawBitmap(bitmap, 0, iHeight, paint);
 		this.draw(canvas);
 		return bitmap;

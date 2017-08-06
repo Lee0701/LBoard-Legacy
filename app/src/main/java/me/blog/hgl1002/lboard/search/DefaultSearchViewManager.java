@@ -54,6 +54,7 @@ public class DefaultSearchViewManager implements SearchViewManager, SearchEngine
 		resultsView = (ViewGroup) LayoutInflater.from(context).inflate(R.layout.search_result, mainView);
 		webView = (DefaultWebSearchView) resultsView.findViewById(R.id.webview);
 		webView.getSettings().setJavaScriptEnabled(true);
+		webView.getSettings().setDomStorageEnabled(true);
 		webView.getSettings().setDefaultTextEncodingName("utf-8");
 		webView.setHorizontalScrollBarEnabled(false);
 		webView.setVerticalScrollBarEnabled(true);
