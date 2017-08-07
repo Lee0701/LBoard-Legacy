@@ -5,7 +5,12 @@ import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Build;
+import android.os.Handler;
+import android.os.Message;
+import android.util.Base64;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -18,8 +23,13 @@ import android.widget.LinearLayout;
 import android.widget.PopupMenu;
 import android.widget.TextView;
 
+import java.io.ByteArrayInputStream;
+
 import me.blog.hgl1002.lboard.LBoard;
 import me.blog.hgl1002.lboard.R;
+import me.blog.hgl1002.lboard.search.data.ImageData;
+import me.blog.hgl1002.lboard.search.data.SearchResultData;
+import me.blog.hgl1002.lboard.search.data.UrlStringData;
 
 public class DefaultSearchViewManager implements SearchViewManager, SearchEngine.SearchEngineListener {
 
@@ -36,6 +46,62 @@ public class DefaultSearchViewManager implements SearchViewManager, SearchEngine
 	SearchEngine searchEngine;
 
 	String url;
+
+	WebView.HitTestResult hitTestResult;
+
+	PopupMenu.OnMenuItemClickListener sendButtonListener = new PopupMenu.OnMenuItemClickListener() {
+		@Override
+		public boolean onMenuItemClick(MenuItem item) {
+			SearchResultData resultData;
+			switch(item.getItemId()) {
+			case R.id.send_link:
+				resultData = new UrlStringData(url, webView.getTitle());
+				parent.sendSearchResult(resultData);
+				parent.hideSearchView();
+				break;
+			case R.id.send_capture:
+				resultData = new ImageData(webView.screenshot(), url, webView.getTitle());
+				parent.sendSearchResult(resultData);
+				parent.hideSearchView();
+				break;
+			}
+			return true;
+		}
+	};
+
+	PopupMenu.OnMenuItemClickListener sendImageListener = new PopupMenu.OnMenuItemClickListener() {
+		@Override
+		public boolean onMenuItemClick(MenuItem item) {
+			SearchResultData resultData;
+			if(hitTestResult == null) return true;
+			switch(item.getItemId()) {
+			case R.id.send_image:
+				if(hitTestResult.getExtra().startsWith("data:")) {
+					try {
+						String datauri = hitTestResult.getExtra();
+						byte[] decoded = Base64.decode(datauri.substring(datauri.indexOf("base64,") + 7), Base64.DEFAULT);
+						Bitmap bitmap = BitmapFactory.decodeByteArray(decoded, 0, decoded.length);
+						resultData = new ImageData(bitmap, hitTestResult.getExtra(), webView.getTitle());
+					} catch (IllegalArgumentException e) {
+						resultData = new ImageData(null, hitTestResult.getExtra(), webView.getTitle());
+					}
+				} else {
+					resultData = new ImageData(null, hitTestResult.getExtra(), webView.getTitle());
+				}
+				parent.sendSearchResult(resultData);
+				break;
+			case R.id.send_image_url:
+				if(hitTestResult.getExtra().startsWith("data:")) {
+					resultData = new UrlStringData(url, webView.getTitle());
+				} else {
+					resultData = new UrlStringData(hitTestResult.getExtra(), webView.getTitle());
+				}
+				parent.sendSearchResult(resultData);
+				break;
+			}
+			return true;
+		}
+	};
 
 	public DefaultSearchViewManager(LBoard parent, SearchEngine searchEngine) {
 		this.parent = parent;
@@ -58,6 +124,7 @@ public class DefaultSearchViewManager implements SearchViewManager, SearchEngine
 		webView.getSettings().setDefaultTextEncodingName("utf-8");
 		webView.setHorizontalScrollBarEnabled(false);
 		webView.setVerticalScrollBarEnabled(true);
+		webView.setLongClickable(true);
 		webView.setWebViewClient(new WebViewClient() {
 			@TargetApi(21)
 			@Override
@@ -83,24 +150,26 @@ public class DefaultSearchViewManager implements SearchViewManager, SearchEngine
 			public void onClick(View v) {
 				PopupMenu popup = new PopupMenu(parent, sendButton);
 				popup.getMenuInflater().inflate(R.menu.send_button_popup, popup.getMenu());
-
-				popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
-					@Override
-					public boolean onMenuItemClick(MenuItem item) {
-						switch(item.getItemId()) {
-						case R.id.send_link:
-							parent.sendSearchResult(url);
-							parent.hideSearchView();
-							break;
-						case R.id.send_capture:
-							parent.sendSearchResult(webView.screenshot());
-							parent.hideSearchView();
-							break;
-						}
-						return true;
-					}
-				});
+				popup.setOnMenuItemClickListener(sendButtonListener);
 				popup.show();
+			}
+		});
+
+		webView.setOnLongClickListener(new View.OnLongClickListener() {
+			@Override
+			public boolean onLongClick(View v) {
+				switch (webView.getHitTestResult().getType()) {
+				case WebView.HitTestResult.SRC_IMAGE_ANCHOR_TYPE:
+				case WebView.HitTestResult.IMAGE_TYPE:
+					hitTestResult = webView.getHitTestResult();
+					PopupMenu popup = new PopupMenu(parent, sendButton);
+					popup.getMenuInflater().inflate(R.menu.send_image_popup, popup.getMenu());
+					popup.setOnMenuItemClickListener(sendImageListener);
+					popup.show();
+					break;
+
+				}
+				return false;
 			}
 		});
 

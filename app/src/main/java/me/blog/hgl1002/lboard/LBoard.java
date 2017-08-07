@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.ClipDescription;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.inputmethodservice.InputMethodService;
 import android.net.Uri;
 import android.os.Build;
@@ -22,11 +23,16 @@ import android.view.inputmethod.InputConnection;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
+import android.widget.Toast;
 
 import java.io.ByteArrayOutputStream;
 
+import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import me.blog.hgl1002.lboard.ime.LBoardInputMethod;
 import me.blog.hgl1002.lboard.ime.charactergenerator.CharacterGenerator;
@@ -38,6 +44,8 @@ import me.blog.hgl1002.lboard.ime.hardkeyboard.DefaultHardKeyboard;
 import me.blog.hgl1002.lboard.search.DefaultSearchViewManager;
 import me.blog.hgl1002.lboard.search.SearchEngine;
 import me.blog.hgl1002.lboard.search.SearchViewManager;
+import me.blog.hgl1002.lboard.search.data.ImageData;
+import me.blog.hgl1002.lboard.search.data.UrlStringData;
 import me.blog.hgl1002.lboard.search.engines.GoogleWebSearchEngine;
 
 public class LBoard extends InputMethodService {
@@ -64,21 +72,25 @@ public class LBoard extends InputMethodService {
 			 = new CharacterGenerator.CharacterGeneratorListener() {
 		@Override
 		public void onCompose(String composing) {
+			InputConnection ic = getCurrentInputConnection();
+			if(ic == null) return;
 			if(searchViewShown) {
 				searchTextComposing = composing;
 				searchViewManager.setText(searchText + searchTextComposing);
 			} else {
-				getCurrentInputConnection().setComposingText(composing, 1);
+				ic.setComposingText(composing, 1);
 			}
 		}
 
 		@Override
 		public void onCommit() {
+			InputConnection ic = getCurrentInputConnection();
+			if(ic == null) return;
 			if(searchViewShown) {
 				searchText += searchTextComposing;
 				searchTextComposing = "";
 			} else {
-				getCurrentInputConnection().finishComposingText();
+				ic.finishComposingText();
 			}
 		}
 	};
@@ -186,6 +198,7 @@ public class LBoard extends InputMethodService {
 	}
 
 	public boolean onKeyEvent(KeyEvent event, boolean hardKey) {
+		InputConnection ic = getCurrentInputConnection();
 		boolean ret = false;
 		switch(event.getKeyCode()) {
 		case KeyEvent.KEYCODE_BACK:
@@ -216,7 +229,8 @@ public class LBoard extends InputMethodService {
 						if(searchText.length() > 0) searchText = searchText.substring(0, searchText.length()-1);
 						searchViewManager.setText(searchText + searchTextComposing);
 					} else {
-						getCurrentInputConnection().deleteSurroundingText(1, 0);
+						ic.sendKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DEL));
+						ic.sendKeyEvent(new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_DEL));
 					}
 				}
 			}
@@ -260,11 +274,32 @@ public class LBoard extends InputMethodService {
 
 	public void sendSearchResult(Object object) {
 		InputConnection ic = getCurrentInputConnection();
+		if(ic == null) {
+			return;
+		}
 		if(object instanceof String) {
 			ic.commitText((String) object, 1);
 		} else if(object instanceof Bitmap) {
 			Uri uri = getBitmapUri((Bitmap) object);
 			if(uri !=  null) commitImage("image/png", uri, "");
+		} else if(object instanceof UrlStringData) {
+			UrlStringData data = (UrlStringData) object;
+			ic.commitText(data.getDescription() + '\n' + data.getUrl(), 1);
+		} else if(object instanceof ImageData) {
+			ImageData data = (ImageData) object;
+			Uri uri = null;
+			if(data.getData() != null && data.getData() instanceof Bitmap) {
+				uri = getBitmapUri((Bitmap) data.getData());
+			} else {
+				uri = getBitmapUri(data.getUrl());
+			}
+			if(uri != null) {
+				String description = data.getDescription();
+				if(description == null) description = "";
+				commitImage("image/png", uri, description);
+			} else {
+				System.err.println("Image URI parse failed!");
+			}
 		}
 	}
 
@@ -317,7 +352,6 @@ public class LBoard extends InputMethodService {
 		String[] mimeTypes = EditorInfoCompat.getContentMimeTypes(getCurrentInputEditorInfo());
 		boolean supported = false;
 		for(String type : mimeTypes) {
-			System.out.println(type);
 			if(ClipDescription.compareMimeTypes(type, mimeType)) {
 				supported = true;
 			}
@@ -350,6 +384,30 @@ public class LBoard extends InputMethodService {
 		bitmap.compress(Bitmap.CompressFormat.PNG, 100, bytes);
 		String path = MediaStore.Images.Media.insertImage(getContentResolver(), bitmap, "web_capture", null);
 		return Uri.parse(path);
+	}
+
+	public Uri getBitmapUri(final String url) {
+		if(!requestPermissions(Manifest.permission.WRITE_EXTERNAL_STORAGE, "")) return null;
+		final AtomicReference<Bitmap> bitmap = new AtomicReference<>();
+		final AtomicBoolean exception = new AtomicBoolean();
+		new Thread() {
+			@Override
+			public void run() {
+				try {
+					bitmap.set(BitmapFactory.decodeStream(new URL(url).openStream()));
+				} catch(IOException e) {
+					exception.set(true);
+					e.printStackTrace();
+				}
+			}
+		}.start();
+		while(!exception.get() && bitmap.get() == null) {
+		}
+		if(exception.get()) {
+			Toast.makeText(this, "Unable to send image.", Toast.LENGTH_SHORT).show();
+			return null;
+		}
+		return getBitmapUri(bitmap.get());
 	}
 
 	protected boolean requestPermissions(String permission, String rationale) {
