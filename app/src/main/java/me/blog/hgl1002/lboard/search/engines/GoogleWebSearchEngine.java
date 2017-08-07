@@ -5,8 +5,10 @@ import android.os.AsyncTask;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLEncoder;
 
 public class GoogleWebSearchEngine extends SearchEngineImpl {
 
@@ -16,7 +18,12 @@ public class GoogleWebSearchEngine extends SearchEngineImpl {
 
 	@Override
 	public void search(Object query) {
-		searchQuery = SEARCH_URL + (String) query;
+		try {
+			searchQuery = SEARCH_URL + URLEncoder.encode((String) query, "UTF-8");
+		} catch(UnsupportedEncodingException e) {
+			e.printStackTrace();
+			searchQuery = SEARCH_URL + (String) query;
+		}
 		new JsonSearchTask().execute();
 	}
 
