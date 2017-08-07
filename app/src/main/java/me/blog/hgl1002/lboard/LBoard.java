@@ -2,6 +2,7 @@ package me.blog.hgl1002.lboard;
 
 import android.Manifest;
 import android.content.ClipDescription;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -358,6 +359,7 @@ public class LBoard extends InputMethodService {
 		}
 		if(!supported) {
 			System.err.println("Mime type " + mimeType + " is not supported!");
+			shareImage(mimeType, contentUri);
 			return;
 		}
 		InputContentInfoCompat inputContentInfo = new InputContentInfoCompat(
@@ -372,6 +374,14 @@ public class LBoard extends InputMethodService {
 		}
 		InputConnectionCompat.commitContent(
 				ic, info, inputContentInfo, flags, null);
+	}
+
+	public void shareImage(String mimeType, Uri contentUri) {
+		Intent shareIntent = new Intent(Intent.ACTION_SEND);
+		shareIntent.setType(mimeType);
+		shareIntent.putExtra(Intent.EXTRA_STREAM, contentUri);
+		shareIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+		startActivity(shareIntent);
 	}
 
 	public void finishComposing() {
