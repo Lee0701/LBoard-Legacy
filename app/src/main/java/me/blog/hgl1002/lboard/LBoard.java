@@ -7,14 +7,12 @@ import android.graphics.Bitmap;
 import android.inputmethodservice.InputMethodService;
 import android.net.Uri;
 import android.os.Build;
-import android.os.IBinder;
 import android.provider.MediaStore;
 import android.support.v13.view.inputmethod.EditorInfoCompat;
 import android.support.v13.view.inputmethod.InputConnectionCompat;
 import android.support.v13.view.inputmethod.InputContentInfoCompat;
 import android.support.v4.content.ContextCompat;
 import android.view.KeyEvent;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.Animation;
@@ -104,7 +102,7 @@ public class LBoard extends InputMethodService {
 		hardKeyboard.setCharacterGenerator(generator);
 		hardKeyboard.setMappings(DefaultHardKeyboard.loadMappings(getResources().openRawResource(R.raw.layout_sebeol_final)));
 
-		softKeyboard.createKeyboards(this, R.xml.keyboard_sebeol_final, R.xml.keyboard_sebeol_final_shift, R.xml.keyboard_lower_default);
+		softKeyboard.createKeyboards(this, R.xml.keyboard_full_10cols, R.xml.keyboard_full_10cols, R.xml.keyboard_lower_default);
 		CharSequence[][] labels = new CharSequence[0x100][2];
 		for(int i = 0 ; i < labels.length ; i++) {
 			for(int j = 0 ; j < labels[i].length ; j++) {
@@ -123,7 +121,7 @@ public class LBoard extends InputMethodService {
 		generator.setListener(characterGeneratorListener);
 		hardKeyboard.setMappings(DefaultHardKeyboard.loadMappings(getResources().openRawResource(R.raw.layout_qwerty)));
 
-		softKeyboard.createKeyboards(this, R.xml.keyboard_qwerty, R.xml.keyboard_qwerty, R.xml.keyboard_lower_default);
+		softKeyboard.createKeyboards(this, R.xml.keyboard_qwerty_4rows, R.xml.keyboard_qwerty_4rows, R.xml.keyboard_lower_default);
 
 		LBoardInputMethod qwerty = new LBoardInputMethod("Qwerty", softKeyboard, hardKeyboard, generator);
 

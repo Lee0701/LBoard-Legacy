@@ -96,9 +96,9 @@ public class DefaultSoftKeyboard implements SoftKeyboard, KeyboardView.OnKeyboar
 	public void setShiftState(boolean shiftOn) {
 		this.shiftPressed = shiftOn;
 		currentMainKeyboard = mainKeyboards[shiftOn ? SHIFT_ON : SHIFT_OFF];
-		currentMainKeyboard.setShifted(shiftOn);
-		currentLowerKeyboard.setShifted(shiftOn);
 		setCurrentKeyboards();
+		mainKeyboardView.setShifted(shiftOn);
+		lowerKeyboardView.setShifted(shiftOn);
 	}
 
 	public void setCurrentKeyboards() {
