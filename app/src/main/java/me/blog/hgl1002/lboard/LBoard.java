@@ -28,13 +28,25 @@ import android.widget.Toast;
 
 import java.io.ByteArrayOutputStream;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Queue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
+import me.blog.hgl1002.lboard.cand.CandidatesViewManager;
+import me.blog.hgl1002.lboard.cand.TextCandidatesViewManager;
+import me.blog.hgl1002.lboard.engine.LBoardDictionary;
+import me.blog.hgl1002.lboard.engine.SQLiteDictionary;
+import me.blog.hgl1002.lboard.engine.Word;
+import me.blog.hgl1002.lboard.engine.WordChain;
 import me.blog.hgl1002.lboard.ime.LBoardInputMethod;
 import me.blog.hgl1002.lboard.ime.charactergenerator.CharacterGenerator;
 import me.blog.hgl1002.lboard.ime.charactergenerator.UnicodeCharacterGenerator;
@@ -57,6 +69,10 @@ public class LBoard extends InputMethodService {
 
 	protected SearchViewManager searchViewManager;
 
+	protected LBoardDictionary dictionary;
+
+	protected CandidatesViewManager candidatesViewManager;
+
 	protected List<LBoardInputMethod> inputMethods;
 	protected int currentInputMethodId;
 	protected LBoardInputMethod currentInputMethod;
@@ -69,6 +85,13 @@ public class LBoard extends InputMethodService {
 	private boolean searchViewShown = false;
 	private String searchText = "", searchTextComposing = "";
 
+	private String composingWord;
+	private String composingChar;
+
+	private String currentWord;
+	private String previousWord;
+	private WordChain chain;
+
 	protected CharacterGenerator.CharacterGeneratorListener characterGeneratorListener
 			 = new CharacterGenerator.CharacterGeneratorListener() {
 		@Override
@@ -79,7 +102,8 @@ public class LBoard extends InputMethodService {
 				searchTextComposing = composing;
 				searchViewManager.setText(searchText + searchTextComposing);
 			} else {
-				ic.setComposingText(composing, 1);
+				composeChar(composing);
+				updateInput();
 			}
 		}
 
@@ -91,8 +115,20 @@ public class LBoard extends InputMethodService {
 				searchText += searchTextComposing;
 				searchTextComposing = "";
 			} else {
-				ic.finishComposingText();
+				commitComposing();
+				updateInput();
 			}
+		}
+	};
+
+	protected CandidatesViewManager.CandidatesViewListener candidatesViewListener
+			 = new CandidatesViewManager.CandidatesViewListener() {
+		@Override
+		public void onSelect(Object candidate) {
+			composeWord(((String) candidate));
+			updateInput();
+			commitWord(true);
+			commitText(" ");
 		}
 	};
 
@@ -145,11 +181,20 @@ public class LBoard extends InputMethodService {
 
 		SearchEngine engine = new GoogleWebSearchEngine();
 		searchViewManager = new DefaultSearchViewManager(this, engine);
+
+		dictionary = new SQLiteDictionary(getFilesDir() + "/dictionary.dic");
+
+		candidatesViewManager = new TextCandidatesViewManager();
+		candidatesViewManager.setListener(candidatesViewListener);
+
+		resetPrediction();
+
 	}
 
 	@Override
 	public View onCreateCandidatesView() {
-		return super.onCreateCandidatesView();
+		View candidatesView = candidatesViewManager.createView(this);
+		return candidatesView;
 	}
 
 	@Override
@@ -177,7 +222,23 @@ public class LBoard extends InputMethodService {
 
 		linearLayout.bringToFront();
 
+		setCandidatesViewShown(true);
+
 		return this.mainInputView;
+	}
+
+	public void updateCandidates() {
+		Word[] previousWords = Arrays.copyOfRange(chain.getAll(), 1, chain.getAll().length);
+		dictionary.searchWord(LBoardDictionary.SEARCH_CHAIN, LBoardDictionary.ORDER_BY_FREQUENCY, previousWord, previousWords);
+		Word[] candidates = dictionary.getNextWord();
+		candidatesViewManager.setCandidates(candidates);
+	}
+
+	public void updateInput() {
+		InputConnection ic = getCurrentInputConnection();
+		currentWord = composingWord + composingChar;
+		ic.setComposingText(currentWord, 1);
+		System.out.println(currentWord);
 	}
 
 	public void updateInputView() {
@@ -190,6 +251,8 @@ public class LBoard extends InputMethodService {
 	@Override
 	public void onStartInputView(EditorInfo info, boolean restarting) {
 		super.onStartInputView(info, restarting);
+		resetPrediction();
+		updateCandidates();
 	}
 
 	@Override
@@ -227,11 +290,17 @@ public class LBoard extends InputMethodService {
 			if(event.getAction() == KeyEvent.ACTION_DOWN) {
 				if (!currentInputMethod.getCharacterGenerator().backspace()) {
 					if(searchViewShown) {
-						if(searchText.length() > 0) searchText = searchText.substring(0, searchText.length()-1);
+						if(searchText.length() > 0) {
+							searchText = searchText.substring(0, searchText.length()-1);
+						}
 						searchViewManager.setText(searchText + searchTextComposing);
 					} else {
-						ic.sendKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DEL));
-						ic.sendKeyEvent(new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_DEL));
+						if(composingWord.length() > 0) {
+							composingWord = composingWord.substring(0, composingWord.length() - 1);
+						} else {
+							ic.sendKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DEL));
+							ic.sendKeyEvent(new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_DEL));
+						}
 					}
 				}
 			}
@@ -258,7 +327,42 @@ public class LBoard extends InputMethodService {
 			}
 		}
 
+		if(event.getAction() == KeyEvent.ACTION_DOWN) {
+			switch (event.getKeyCode()) {
+			case KeyEvent.KEYCODE_SPACE:
+				commitWord(true);
+				break;
+
+			case KeyEvent.KEYCODE_PERIOD:
+				commitWord(true);
+				resetPrediction();
+				break;
+			}
+		}
+		if (event.getAction() == KeyEvent.ACTION_UP && event.getKeyCode() == -114) {
+			shareDictionary();
+		}
 		return ret;
+	}
+
+	public void resetPrediction() {
+		chain = new WordChain(new Word[] {WordChain.START, WordChain.START, WordChain.START});
+		previousWord = "";
+		currentWord = "";
+	}
+
+	public void shareDictionary() {
+		try {
+			FileInputStream fis = new FileInputStream(new File(getFilesDir(), "dictionary.dic"));
+			File file = new File("/storage/emulated/0/dictionary.dic");
+			FileOutputStream fos = new FileOutputStream(file);
+			byte[] data = new byte[fis.available()];
+			fis.read(data);
+			fos.write(data);
+			shareImage("application/octet-stream", Uri.fromFile(file));
+		} catch(IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 	public void resetSearch() {
@@ -347,6 +451,39 @@ public class LBoard extends InputMethodService {
 		} else {
 			getCurrentInputConnection().commitText(text, 1);
 		}
+	}
+
+	public void composeChar(String composing) {
+		composingChar = composing;
+	}
+
+	public void composeWord(String word) {
+		commitComposing();
+		composingWord = word;
+	}
+
+	public void commitComposing() {
+		composingWord += composingChar;
+		composingChar = "";
+	}
+
+	public void commitWord(boolean learn) {
+		commitComposing();
+		if(learn && dictionary instanceof SQLiteDictionary && currentWord != "") {
+			WordChain prev = this.chain;
+			if(prev == null) prev = new WordChain(new Word[] {WordChain.START, WordChain.START, WordChain.START});
+			WordChain chain = new WordChain(new Word[] {prev.get(1), prev.get(2), new Word(currentWord, null)});
+			SQLiteDictionary dictionary = (SQLiteDictionary) this.dictionary;
+			dictionary.learn(chain);
+			this.chain = chain;
+		}
+		InputConnection ic = getCurrentInputConnection();
+		ic.setComposingText(currentWord, 1);
+		ic.finishComposingText();
+		previousWord = currentWord;
+		composingWord = "";
+		currentWord = "";
+		updateCandidates();
 	}
 
 	public void commitImage(String mimeType, Uri contentUri, String imageDescription) {
