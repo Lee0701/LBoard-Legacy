@@ -76,6 +76,12 @@ public class SQLiteDictionary implements LBoardDictionary {
 		};
 		Cursor cursor = dbDictionary.rawQuery(sql, args);
 
+		if(cursor.getCount() == 0) {
+			cursor.close();
+			sql = "select * from " + TABLE_NAME_CHAINS + " where " + COLUMN_NAME_PREVIOUS + " like ?";
+			cursor = dbDictionary.rawQuery(sql, args);
+		}
+
 		Map<String, Word> list = new HashMap<>();
 		while(cursor.moveToNext()) {
 			String candidate = cursor.getString(cursor.getColumnIndex(COLUMN_NAME_CANDIDATE));

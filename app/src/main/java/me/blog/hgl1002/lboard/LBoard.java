@@ -254,7 +254,6 @@ public class LBoard extends InputMethodService {
 		InputConnection ic = getCurrentInputConnection();
 		currentWord = composingWord + composingChar;
 		ic.setComposingText(currentWord, 1);
-		System.out.println(currentWord);
 	}
 
 	public void updateInputView() {
@@ -313,6 +312,7 @@ public class LBoard extends InputMethodService {
 					} else {
 						if(composingWord.length() > 0) {
 							composingWord = composingWord.substring(0, composingWord.length() - 1);
+							updateInput();
 						} else {
 							ic.sendKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DEL));
 							ic.sendKeyEvent(new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_DEL));
