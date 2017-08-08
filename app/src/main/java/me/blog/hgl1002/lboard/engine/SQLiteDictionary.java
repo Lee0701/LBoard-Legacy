@@ -25,6 +25,9 @@ public class SQLiteDictionary implements LBoardDictionary {
 	protected static final String COLUMN_NAME_PREVIOUS = "previous";
 	protected static final String COLUMN_NAME_FREQUENCY = "frequency";
 
+	public static final int WORD_DELETION_THRESHOLD = 20;
+	public static final int WORD_DELETION_UNIT = 3;
+
 	public SQLiteDictionary(String dbFilePath) {
 		if(dbFilePath != null) {
 			this.dbDictionary = SQLiteDatabase.openOrCreateDatabase(dbFilePath, null);
@@ -118,13 +121,11 @@ public class SQLiteDictionary implements LBoardDictionary {
 	}
 
 	public int learn(WordChain chain) {
-		String previous = "";
-		for(int i = 0 ; i < chain.size()-1 ; i++) {
-			previous += chain.get(i).getCandidate() + ";";
-		}
-		previous = previous.substring(0, previous.length() - 1);
-		String candidate = chain.get(chain.size()-1).getCandidate();
+		String previous = getPreviousString(chain);
 
+		deleteUnusedChains(previous);
+
+		String candidate = chain.get(chain.size()-1).getCandidate();
 		String sql;
 
 		sql = "select * from " + TABLE_NAME_CHAINS + " where " + COLUMN_NAME_PREVIOUS + "=? and " + COLUMN_NAME_CANDIDATE + "=?";
@@ -167,19 +168,43 @@ public class SQLiteDictionary implements LBoardDictionary {
 		return 1;
 	}
 
-	protected Map<String, Word> sort(Map<String, Word> map) {
-		List<Map.Entry<String, Word>> list = new LinkedList<Map.Entry<String, Word>>(map.entrySet());
-		Collections.sort(list, new Comparator<Map.Entry<String, Word>>() {
-			@Override
-			public int compare(Map.Entry<String, Word> o1, Map.Entry<String, Word> o2) {
-				return o1.getValue().getFrequency() - o2.getValue().getFrequency();
-			}
-		});
-		Map<String, Word> result = new LinkedHashMap<>();
-		for(Map.Entry<String, Word> entry : list) {
-			result.put(entry.getKey(), entry.getValue());
+	public int deleteUnusedChains(WordChain chain) {
+		return this.deleteUnusedChains(getPreviousString(chain));
+	}
+
+	public int deleteUnusedChains(String previous) {
+		String sql = "select * from " + TABLE_NAME_CHAINS
+				+ " where " + COLUMN_NAME_PREVIOUS + "=?"
+				+ " and " + COLUMN_NAME_FREQUENCY + " > ?";
+		String[] args = new String[] {
+				previous,
+				String.valueOf(WORD_DELETION_THRESHOLD)
+		};
+		Cursor cursor = dbDictionary.rawQuery(sql, args);
+		if(cursor.getCount() > 0) {
+			sql = "update " + TABLE_NAME_CHAINS
+					+ " set " + COLUMN_NAME_FREQUENCY +  " = " + COLUMN_NAME_FREQUENCY + " / ?"
+					+ " where " + COLUMN_NAME_PREVIOUS + " = ?";
+			args = new String[] {
+					String.valueOf(WORD_DELETION_UNIT),
+					previous
+			};
+			dbDictionary.execSQL(sql, args);
+			sql = "delete from " + TABLE_NAME_CHAINS
+					+ " where " + COLUMN_NAME_FREQUENCY + " <= 0";
+			dbDictionary.execSQL(sql);
+			return 1;
 		}
-		return result;
+		return 0;
+	}
+
+	public String getPreviousString(WordChain chain) {
+		String previous = "";
+		for(int i = 0 ; i < chain.size()-1 ; i++) {
+			previous += chain.get(i).getCandidate() + ";";
+		}
+		previous = previous.substring(0, previous.length() - 1);
+		return previous;
 	}
 
 }
