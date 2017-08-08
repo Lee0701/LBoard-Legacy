@@ -9,6 +9,8 @@ import android.graphics.BitmapFactory;
 import android.inputmethodservice.InputMethodService;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Handler;
+import android.os.Message;
 import android.provider.MediaStore;
 import android.support.v13.view.inputmethod.EditorInfoCompat;
 import android.support.v13.view.inputmethod.InputConnectionCompat;
@@ -63,6 +65,10 @@ import me.blog.hgl1002.lboard.search.engines.GoogleWebSearchEngine;
 
 public class LBoard extends InputMethodService {
 
+	public static final int MSG_UPDATE_CANDIDATES = 1;
+
+	public static final int DELAY_DISPLAY_CANDIDATES = 100;
+
 	protected ViewGroup mainInputView;
 	protected View keyboardView;
 	protected View searchView;
@@ -91,6 +97,20 @@ public class LBoard extends InputMethodService {
 	private String currentWord;
 	private String previousWord;
 	private WordChain chain;
+
+	Handler handler = new Handler() {
+		@Override
+		public void handleMessage(Message msg) {
+			switch (msg.what) {
+			case MSG_UPDATE_CANDIDATES:
+				Word[] previousWords = Arrays.copyOfRange(chain.getAll(), 1, chain.getAll().length);
+				dictionary.searchWord(LBoardDictionary.SEARCH_CHAIN, LBoardDictionary.ORDER_BY_FREQUENCY, previousWord, previousWords);
+				Word[] candidates = dictionary.getNextWord();
+				candidatesViewManager.setCandidates(candidates);
+				break;
+			}
+		}
+	};
 
 	protected CharacterGenerator.CharacterGeneratorListener characterGeneratorListener
 			 = new CharacterGenerator.CharacterGeneratorListener() {
@@ -228,10 +248,7 @@ public class LBoard extends InputMethodService {
 	}
 
 	public void updateCandidates() {
-		Word[] previousWords = Arrays.copyOfRange(chain.getAll(), 1, chain.getAll().length);
-		dictionary.searchWord(LBoardDictionary.SEARCH_CHAIN, LBoardDictionary.ORDER_BY_FREQUENCY, previousWord, previousWords);
-		Word[] candidates = dictionary.getNextWord();
-		candidatesViewManager.setCandidates(candidates);
+		handler.sendMessageDelayed(handler.obtainMessage(MSG_UPDATE_CANDIDATES), DELAY_DISPLAY_CANDIDATES);
 	}
 
 	public void updateInput() {
@@ -349,6 +366,8 @@ public class LBoard extends InputMethodService {
 		chain = new WordChain(new Word[] {WordChain.START, WordChain.START, WordChain.START});
 		previousWord = "";
 		currentWord = "";
+		composingWord = "";
+		composingChar = "";
 	}
 
 	public void shareDictionary() {
