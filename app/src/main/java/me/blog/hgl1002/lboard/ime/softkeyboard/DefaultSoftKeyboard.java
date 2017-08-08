@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.inputmethodservice.Keyboard;
 import android.inputmethodservice.KeyboardView;
+import android.os.Vibrator;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -53,6 +54,8 @@ public class DefaultSoftKeyboard implements SoftKeyboard, KeyboardView.OnKeyboar
 	protected CharSequence[][] labels;
 
 	protected boolean shiftPressed;
+
+	protected long pressTime;
 
 	public DefaultSoftKeyboard(LBoard parent) {
 		this.parent = parent;
@@ -138,10 +141,18 @@ public class DefaultSoftKeyboard implements SoftKeyboard, KeyboardView.OnKeyboar
 
 	@Override
 	public void onPress(int primaryCode) {
+		Vibrator vibrator = (Vibrator) parent.getSystemService(Context.VIBRATOR_SERVICE);
+		vibrator.vibrate(30);
+		pressTime = System.currentTimeMillis();
 	}
 
 	@Override
 	public void onRelease(int primaryCode) {
+		if(primaryCode == KeyEvent.KEYCODE_DEL) return;
+		Vibrator vibrator = (Vibrator) parent.getSystemService(Context.VIBRATOR_SERVICE);
+		int duration = (int) (System.currentTimeMillis() - pressTime) / 15;
+		if(duration > 20) duration = 20;
+		if(duration >= 10) vibrator.vibrate(duration);
 	}
 
 	@Override
