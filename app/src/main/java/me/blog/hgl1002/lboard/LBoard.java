@@ -157,6 +157,7 @@ public class LBoard extends InputMethodService {
 			composeWord(((String) candidate));
 			updateInput();
 			commitWord(true);
+			updateCandidates();
 			commitText(" ");
 		}
 	};
@@ -280,7 +281,7 @@ public class LBoard extends InputMethodService {
 	public void onStartInputView(EditorInfo info, boolean restarting) {
 		super.onStartInputView(info, restarting);
 		if(restarting) {
-			learnWord(new Word(currentWord, null), start, true);
+			learnWord(new Word(currentWord, null), start, false);
 			previousWord = currentWord;
 			resetComposing();
 			updateInput();
@@ -371,12 +372,14 @@ public class LBoard extends InputMethodService {
 			switch (event.getKeyCode()) {
 			case KeyEvent.KEYCODE_SPACE:
 				commitWord(true);
+				updateCandidates();
 				break;
 
 			case KeyEvent.KEYCODE_ENTER:
 			case KeyEvent.KEYCODE_PERIOD:
 				commitWord(true);
-				resetComposing();
+				start = true;
+				updateCandidates();
 				break;
 
 			}
@@ -522,11 +525,10 @@ public class LBoard extends InputMethodService {
 		previousWord = currentWord;
 		composingWord = "";
 		currentWord = "";
-		updateCandidates();
 	}
 
 	public void learnWord(Word word, boolean start, boolean end) {
-		if(dictionary instanceof SQLiteDictionary && currentWord != "") {
+		if(dictionary instanceof SQLiteDictionary && word.getCandidate() != "") {
 			SQLiteDictionary dictionary = (SQLiteDictionary) this.dictionary;
 			if(start || end) {
 				WordChain chain;
@@ -538,12 +540,13 @@ public class LBoard extends InputMethodService {
 					chain = new WordChain(new Word[] {word, WordChain.END, WordChain.END});
 				}
 				dictionary.learn(chain);
+			} else {
+				WordChain prev = this.chain;
+				if(prev == null) prev = new WordChain(new Word[] {WordChain.START, WordChain.START, WordChain.START});
+				WordChain chain = new WordChain(new Word[] {prev.get(1), prev.get(2), word});
+				dictionary.learn(chain);
+				this.chain = chain;
 			}
-			WordChain prev = this.chain;
-			if(prev == null) prev = new WordChain(new Word[] {WordChain.START, WordChain.START, WordChain.START});
-			WordChain chain = new WordChain(new Word[] {prev.get(1), prev.get(2), word});
-			dictionary.learn(chain);
-			this.chain = chain;
 		}
 	}
 
