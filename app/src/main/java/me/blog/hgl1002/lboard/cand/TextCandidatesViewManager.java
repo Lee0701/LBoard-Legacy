@@ -46,7 +46,7 @@ public class TextCandidatesViewManager implements CandidatesViewManager {
 		layout.removeAllViews();
 		if(candidates == null || candidates.length == 0) {
 			TextView textView = new TextView(context);
-			textView.setText("null");
+			textView.setText("");
 			textView.setTextSize(TypedValue.COMPLEX_UNIT_PT, 10);
 			textView.setPadding(20, 10, 20, 10);
 			layout.addView(textView);

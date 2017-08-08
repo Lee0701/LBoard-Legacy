@@ -88,8 +88,11 @@ public class SQLiteDictionary implements LBoardDictionary {
 		while(cursor.moveToNext()) {
 			String candidate = cursor.getString(cursor.getColumnIndex(COLUMN_NAME_CANDIDATE));
 			int frequency = cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_FREQUENCY));
-			list.add(new Word(candidate, null, frequency));
-			candidates.add(candidate);
+			if(candidate.equals("END")) {
+			} else {
+				list.add(new Word(candidate, null, frequency));
+				candidates.add(candidate);
+			}
 		}
 		cursor.close();
 
@@ -103,7 +106,10 @@ public class SQLiteDictionary implements LBoardDictionary {
 		while(cursor.moveToNext()) {
 			String candidate = cursor.getString(cursor.getColumnIndex(COLUMN_NAME_CANDIDATE));
 			int frequency = cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_FREQUENCY));
-			if(!candidates.contains(candidate)) list.add(new Word(candidate, null, frequency));
+			if(candidate.equals("END")) {
+			} else {
+				if(!candidates.contains(candidate)) list.add(new Word(candidate, null, frequency));
+			}
 		}
 		cursor.close();
 

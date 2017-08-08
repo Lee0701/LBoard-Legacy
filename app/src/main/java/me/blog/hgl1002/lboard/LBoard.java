@@ -38,6 +38,7 @@ import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -97,15 +98,24 @@ public class LBoard extends InputMethodService {
 	private String currentWord;
 	private String previousWord;
 	private WordChain chain;
+	private boolean start;
 
 	Handler handler = new Handler() {
 		@Override
 		public void handleMessage(Message msg) {
 			switch (msg.what) {
 			case MSG_UPDATE_CANDIDATES:
+				List<Word> candidatesList = new ArrayList<>();
 				Word[] previousWords = Arrays.copyOfRange(chain.getAll(), 1, chain.getAll().length);
 				Word[] candidates = dictionary.searchNextWord(LBoardDictionary.SEARCH_CHAIN, LBoardDictionary.ORDER_BY_FREQUENCY, previousWord, previousWords);
-				candidatesViewManager.setCandidates(candidates);
+				Collections.addAll(candidatesList, candidates);
+				if(start) {
+					previousWords = new Word[] {WordChain.START, WordChain.START};
+					candidates = dictionary.searchNextWord(LBoardDictionary.SEARCH_CHAIN, LBoardDictionary.ORDER_BY_FREQUENCY, previousWord, previousWords);
+					Collections.addAll(candidatesList, candidates);
+				}
+				candidates = new Word[candidatesList.size()];
+				candidatesViewManager.setCandidates(candidatesList.toArray(candidates));
 				break;
 			}
 		}
@@ -206,7 +216,10 @@ public class LBoard extends InputMethodService {
 		candidatesViewManager = new TextCandidatesViewManager();
 		candidatesViewManager.setListener(candidatesViewListener);
 
-		resetPrediction();
+		resetComposing();
+		chain = new WordChain(new Word[] {WordChain.START, WordChain.START, WordChain.START});
+		currentWord = "";
+		previousWord = "";
 
 	}
 
@@ -267,11 +280,17 @@ public class LBoard extends InputMethodService {
 	public void onStartInputView(EditorInfo info, boolean restarting) {
 		super.onStartInputView(info, restarting);
 		if(restarting) {
-			if(currentWord != "") {
-				commitWord(true, true);
-			}
+			learnWord(new Word(currentWord, null), start, true);
+			previousWord = currentWord;
+			resetComposing();
+			updateInput();
+			start = true;
+		} else {
+			resetComposing();
+			chain = new WordChain(new Word[] {WordChain.START, WordChain.START, WordChain.START});
+			currentWord = "";
+			previousWord = "";
 		}
-		resetPrediction();
 		updateCandidates();
 	}
 
@@ -357,7 +376,7 @@ public class LBoard extends InputMethodService {
 			case KeyEvent.KEYCODE_ENTER:
 			case KeyEvent.KEYCODE_PERIOD:
 				commitWord(true);
-				resetPrediction();
+				resetComposing();
 				break;
 
 			}
@@ -368,10 +387,7 @@ public class LBoard extends InputMethodService {
 		return ret;
 	}
 
-	public void resetPrediction() {
-		chain = new WordChain(new Word[] {WordChain.START, WordChain.START, WordChain.START});
-		previousWord = "";
-		currentWord = "";
+	public void resetComposing() {
 		composingWord = "";
 		composingChar = "";
 	}
@@ -493,27 +509,42 @@ public class LBoard extends InputMethodService {
 	}
 
 	public void commitWord(boolean learn) {
-		commitWord(learn, false);
-	}
-
-	public void commitWord(boolean learn, boolean cancel) {
 		commitComposing();
-		if(learn && dictionary instanceof SQLiteDictionary && currentWord != "") {
-			WordChain prev = this.chain;
-			if(prev == null) prev = new WordChain(new Word[] {WordChain.START, WordChain.START, WordChain.START});
-			WordChain chain = new WordChain(new Word[] {prev.get(1), prev.get(2), new Word(currentWord, null)});
-			SQLiteDictionary dictionary = (SQLiteDictionary) this.dictionary;
-			dictionary.learn(chain);
-			this.chain = chain;
+		if(learn) {
+			Word word = new Word(currentWord, null);
+			if(start) learnWord(word, true, false);
+			learnWord(word, false, false);
+			start = false;
 		}
 		InputConnection ic = getCurrentInputConnection();
-		if(cancel) ic.setComposingText("", 1);
-		else ic.setComposingText(currentWord, 1);
+		ic.setComposingText(currentWord, 1);
 		ic.finishComposingText();
 		previousWord = currentWord;
 		composingWord = "";
 		currentWord = "";
 		updateCandidates();
+	}
+
+	public void learnWord(Word word, boolean start, boolean end) {
+		if(dictionary instanceof SQLiteDictionary && currentWord != "") {
+			SQLiteDictionary dictionary = (SQLiteDictionary) this.dictionary;
+			if(start || end) {
+				WordChain chain;
+				if(start && end) {
+					chain = new WordChain(new Word[] {WordChain.START, word, WordChain.END});
+				} else if(start) {
+					chain = new WordChain(new Word[] {WordChain.START, WordChain.START, word});
+				} else {
+					chain = new WordChain(new Word[] {word, WordChain.END, WordChain.END});
+				}
+				dictionary.learn(chain);
+			}
+			WordChain prev = this.chain;
+			if(prev == null) prev = new WordChain(new Word[] {WordChain.START, WordChain.START, WordChain.START});
+			WordChain chain = new WordChain(new Word[] {prev.get(1), prev.get(2), word});
+			dictionary.learn(chain);
+			this.chain = chain;
+		}
 	}
 
 	public void commitImage(String mimeType, Uri contentUri, String imageDescription) {
