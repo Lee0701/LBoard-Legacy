@@ -3,6 +3,7 @@ package me.blog.hgl1002.lboard.engine;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -45,7 +46,8 @@ public class SQLiteDictionary implements LBoardDictionary {
 	protected void createChainTable(String name) {
 		String sql = "create table if not exists " + name + " "
 				+ "(" + COLUMN_NAME_PREVIOUS + " text, "
-				+ COLUMN_NAME_CANDIDATE + " text)";
+				+ COLUMN_NAME_CANDIDATE + " text, "
+				+ COLUMN_NAME_FREQUENCY + " integer)";
 		if(dbDictionary != null) {
 			dbDictionary.execSQL(sql);
 		}
@@ -66,35 +68,47 @@ public class SQLiteDictionary implements LBoardDictionary {
 	@Override
 	public Word[] searchNextWord(int operation, int order, String keyString, Word[] previousWords) {
 		String previous = "";
+		String last = "";
 		for(Word word : previousWords) {
-			previous += word.getCandidate() + ";";
+			last = word.getCandidate();
+			previous += last + ";";
 		}
 		previous = previous.substring(0, previous.length()-1);
-		String sql = "select * from " + TABLE_NAME_CHAINS + " where " + COLUMN_NAME_PREVIOUS + "=?";
+		String sql = "select * from " + TABLE_NAME_CHAINS
+				+ " where " + COLUMN_NAME_PREVIOUS + "=?"
+				+ " order by " + COLUMN_NAME_FREQUENCY + " desc";
 		String[] args = new String[] {
 				previous
 		};
 		Cursor cursor = dbDictionary.rawQuery(sql, args);
 
-		if(cursor.getCount() == 0) {
-			cursor.close();
-			sql = "select * from " + TABLE_NAME_CHAINS + " where " + COLUMN_NAME_PREVIOUS + " like ?";
-			cursor = dbDictionary.rawQuery(sql, args);
-		}
+		List<Word> list = new ArrayList<>();
+		List<String> candidates = new ArrayList<>();
 
-		Map<String, Word> list = new HashMap<>();
 		while(cursor.moveToNext()) {
 			String candidate = cursor.getString(cursor.getColumnIndex(COLUMN_NAME_CANDIDATE));
-			if(list.containsKey(candidate)) {
-				list.get(candidate).frequency++;
-			} else {
-				list.put(candidate, new Word(candidate, null));
-			}
+			int frequency = cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_FREQUENCY));
+			list.add(new Word(candidate, null, frequency));
+			candidates.add(candidate);
 		}
 		cursor.close();
-		list = sort(list);
-		Word[] result = new Word[list.values().size()];
-		return list.values().toArray(result);
+
+		sql = "select * from " + TABLE_NAME_CHAINS
+				+ " where " + COLUMN_NAME_PREVIOUS + " like ?"
+				+ " order by " + COLUMN_NAME_FREQUENCY + " desc";
+		args = new String[] {
+				"%;" + last
+		};
+		cursor = dbDictionary.rawQuery(sql, args);
+		while(cursor.moveToNext()) {
+			String candidate = cursor.getString(cursor.getColumnIndex(COLUMN_NAME_CANDIDATE));
+			int frequency = cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_FREQUENCY));
+			if(!candidates.contains(candidate)) list.add(new Word(candidate, null, frequency));
+		}
+		cursor.close();
+
+		Word[] result = new Word[list.size()];
+		return list.toArray(result);
 	}
 
 	public int learn(WordChain chain) {
@@ -112,16 +126,35 @@ public class SQLiteDictionary implements LBoardDictionary {
 				previous,
 				candidate
 		};
-		if(dbDictionary.rawQuery(sql, args).getCount() > 0) {
-			return 0;
+		Cursor cursor = dbDictionary.rawQuery(sql, args);
+		if(cursor.getCount() > 0) {
+			cursor.moveToNext();
+			int frequency = cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_FREQUENCY));
+			cursor.close();
+			sql = "update " + TABLE_NAME_CHAINS
+					+ " set " + COLUMN_NAME_FREQUENCY + "=?"
+					+ " where " + COLUMN_NAME_PREVIOUS + "=?"
+					+ " and " + COLUMN_NAME_CANDIDATE + "=?";
+			args = new String[] {
+					String.valueOf(++frequency),
+					previous,
+					candidate
+			};
+			dbDictionary.execSQL(sql, args);
+			return 2;
 		}
 
 		sql = "insert into " + TABLE_NAME_CHAINS + " ("
 				+ COLUMN_NAME_PREVIOUS + ", "
-				+ COLUMN_NAME_CANDIDATE + ") values(\""
-				+ previous + "\", \"" + candidate + "\")";
+				+ COLUMN_NAME_CANDIDATE + ", "
+				+ COLUMN_NAME_FREQUENCY + ") values(?, ?, ?)";
+		args = new String[] {
+				previous,
+				candidate,
+				"1"
+		};
 		try {
-			dbDictionary.execSQL(sql);
+			dbDictionary.execSQL(sql, args);
 		} catch(Exception e) {
 			return -1;
 		}
