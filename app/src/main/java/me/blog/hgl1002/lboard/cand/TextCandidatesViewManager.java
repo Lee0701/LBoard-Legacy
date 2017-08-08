@@ -2,6 +2,7 @@ package me.blog.hgl1002.lboard.cand;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.util.TypedValue;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -43,11 +44,19 @@ public class TextCandidatesViewManager implements CandidatesViewManager {
 	@Override
 	public void setCandidates(Object[] candidates) {
 		layout.removeAllViews();
-		if(candidates == null) return;
+		if(candidates == null || candidates.length == 0) {
+			TextView textView = new TextView(context);
+			textView.setText("null");
+			textView.setTextSize(TypedValue.COMPLEX_UNIT_PT, 10);
+			textView.setPadding(20, 10, 20, 10);
+			layout.addView(textView);
+			return;
+		}
 		for(Object o : candidates) {
 			String str = o.toString();
 			TextView textView = new TextView(context);
 			textView.setText(str);
+			textView.setTextSize(TypedValue.COMPLEX_UNIT_PT, 10);
 			textView.setPadding(20, 10, 20, 10);
 			textView.setOnClickListener(new View.OnClickListener() {
 				@Override
