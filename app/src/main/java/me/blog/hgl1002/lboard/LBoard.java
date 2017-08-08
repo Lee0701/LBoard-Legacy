@@ -266,6 +266,11 @@ public class LBoard extends InputMethodService {
 	@Override
 	public void onStartInputView(EditorInfo info, boolean restarting) {
 		super.onStartInputView(info, restarting);
+		if(restarting) {
+			if(currentWord != "") {
+				commitWord(true, true);
+			}
+		}
 		resetPrediction();
 		updateCandidates();
 	}
@@ -349,10 +354,12 @@ public class LBoard extends InputMethodService {
 				commitWord(true);
 				break;
 
+			case KeyEvent.KEYCODE_ENTER:
 			case KeyEvent.KEYCODE_PERIOD:
 				commitWord(true);
 				resetPrediction();
 				break;
+
 			}
 		}
 		if (event.getAction() == KeyEvent.ACTION_UP && event.getKeyCode() == -114) {
@@ -486,6 +493,10 @@ public class LBoard extends InputMethodService {
 	}
 
 	public void commitWord(boolean learn) {
+		commitWord(learn, false);
+	}
+
+	public void commitWord(boolean learn, boolean cancel) {
 		commitComposing();
 		if(learn && dictionary instanceof SQLiteDictionary && currentWord != "") {
 			WordChain prev = this.chain;
@@ -496,7 +507,8 @@ public class LBoard extends InputMethodService {
 			this.chain = chain;
 		}
 		InputConnection ic = getCurrentInputConnection();
-		ic.setComposingText(currentWord, 1);
+		if(cancel) ic.setComposingText("", 1);
+		else ic.setComposingText(currentWord, 1);
 		ic.finishComposingText();
 		previousWord = currentWord;
 		composingWord = "";
