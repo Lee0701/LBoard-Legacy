@@ -4,7 +4,9 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
+import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -26,8 +28,11 @@ public class TextCandidatesViewManager implements CandidatesViewManager {
 	@Override
 	public View createView(Context context) {
 		this.context = context;
+		HorizontalScrollView scrollView = new HorizontalScrollView(context);
 		layout = new LinearLayout(context);
-		return layout;
+		layout.setBackgroundColor(context.getResources().getColor(android.R.color.background_light));
+		scrollView.addView(layout);
+		return scrollView;
 	}
 
 	@Override
@@ -44,11 +49,10 @@ public class TextCandidatesViewManager implements CandidatesViewManager {
 			TextView textView = new TextView(context);
 			textView.setText(str);
 			textView.setPadding(20, 10, 20, 10);
-			textView.setOnTouchListener(new View.OnTouchListener() {
+			textView.setOnClickListener(new View.OnClickListener() {
 				@Override
-				public boolean onTouch(View v, MotionEvent event) {
+				public void onClick(View v) {
 					if(listener != null) listener.onSelect(((TextView) v).getText());
-					return false;
 				}
 			});
 			layout.addView(textView);
