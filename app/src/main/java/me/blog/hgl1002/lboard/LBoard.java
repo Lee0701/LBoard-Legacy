@@ -104,8 +104,7 @@ public class LBoard extends InputMethodService {
 			switch (msg.what) {
 			case MSG_UPDATE_CANDIDATES:
 				Word[] previousWords = Arrays.copyOfRange(chain.getAll(), 1, chain.getAll().length);
-				dictionary.searchWord(LBoardDictionary.SEARCH_CHAIN, LBoardDictionary.ORDER_BY_FREQUENCY, previousWord, previousWords);
-				Word[] candidates = dictionary.getNextWord();
+				Word[] candidates = dictionary.searchNextWord(LBoardDictionary.SEARCH_CHAIN, LBoardDictionary.ORDER_BY_FREQUENCY, previousWord, previousWords);
 				candidatesViewManager.setCandidates(candidates);
 				break;
 			}

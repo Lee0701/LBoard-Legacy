@@ -1,7 +1,6 @@
 package me.blog.hgl1002.lboard.engine;
 
 import android.database.Cursor;
-import android.database.sqlite.SQLiteConstraintException;
 import android.database.sqlite.SQLiteDatabase;
 
 import java.util.Collections;
@@ -15,7 +14,6 @@ import java.util.Map;
 public class SQLiteDictionary implements LBoardDictionary {
 
 	protected SQLiteDatabase dbDictionary;
-	protected Cursor dbCursor;
 
 	protected static final String TABLE_NAME_DIC = "dic";
 	protected static final String TABLE_NAME_CHAINS = "chain";
@@ -61,46 +59,36 @@ public class SQLiteDictionary implements LBoardDictionary {
 	}
 
 	@Override
-	public int searchWord(int operation, int order, String keyString) {
-		return 0;
+	public Word[] searchCurrentWord(int operation, int order, String keyString) {
+		return null;
 	}
 
 	@Override
-	public int searchWord(int operation, int order, String keyString, Word[] previousWords) {
+	public Word[] searchNextWord(int operation, int order, String keyString, Word[] previousWords) {
 		String previous = "";
 		for(Word word : previousWords) {
 			previous += word.getCandidate() + ";";
 		}
 		previous = previous.substring(0, previous.length()-1);
-		String sql = "select * from " + TABLE_NAME_CHAINS + " where " + COLUMN_NAME_PREVIOUS + "=\"" + previous + "\"";
-		String[] args = new String[] {};
-		dbCursor = dbDictionary.rawQuery(sql, args);
-		return 0;
-	}
+		String sql = "select * from " + TABLE_NAME_CHAINS + " where " + COLUMN_NAME_PREVIOUS + "=?";
+		String[] args = new String[] {
+				previous
+		};
+		Cursor cursor = dbDictionary.rawQuery(sql, args);
 
-	@Override
-	public Word[] getCurrentWord() {
-		return null;
-	}
-
-	@Override
-	public Word[] getNextWord() {
-		if(dbCursor != null) {
-
-			Map<String, Word> list = new HashMap<>();
-			while(dbCursor.moveToNext()) {
-				String candidate = dbCursor.getString(dbCursor.getColumnIndex(COLUMN_NAME_CANDIDATE));
-				if(list.containsKey(candidate)) {
-					list.get(candidate).frequency++;
-				} else {
-					list.put(candidate, new Word(candidate, null));
-				}
+		Map<String, Word> list = new HashMap<>();
+		while(cursor.moveToNext()) {
+			String candidate = cursor.getString(cursor.getColumnIndex(COLUMN_NAME_CANDIDATE));
+			if(list.containsKey(candidate)) {
+				list.get(candidate).frequency++;
+			} else {
+				list.put(candidate, new Word(candidate, null));
 			}
-			list = sort(list);
-			Word[] result = new Word[list.values().size()];
-			return list.values().toArray(result);
 		}
-		return null;
+		cursor.close();
+		list = sort(list);
+		Word[] result = new Word[list.values().size()];
+		return list.values().toArray(result);
 	}
 
 	public int learn(WordChain chain) {
@@ -110,14 +98,26 @@ public class SQLiteDictionary implements LBoardDictionary {
 		}
 		previous = previous.substring(0, previous.length() - 1);
 		String candidate = chain.get(chain.size()-1).getCandidate();
-		String sql = "insert into " + TABLE_NAME_CHAINS + " ("
+
+		String sql;
+
+		sql = "select * from " + TABLE_NAME_CHAINS + " where " + COLUMN_NAME_PREVIOUS + "=? and " + COLUMN_NAME_CANDIDATE + "=?";
+		String[] args = new String[] {
+				previous,
+				candidate
+		};
+		if(dbDictionary.rawQuery(sql, args).getCount() > 0) {
+			return 0;
+		}
+
+		sql = "insert into " + TABLE_NAME_CHAINS + " ("
 				+ COLUMN_NAME_PREVIOUS + ", "
 				+ COLUMN_NAME_CANDIDATE + ") values(\""
 				+ previous + "\", \"" + candidate + "\")";
 		try {
 			dbDictionary.execSQL(sql);
-		} catch(SQLiteConstraintException e) {
-
+		} catch(Exception e) {
+			return -1;
 		}
 		return 1;
 	}
