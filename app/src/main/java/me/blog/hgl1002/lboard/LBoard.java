@@ -77,9 +77,9 @@ public class LBoard extends InputMethodService {
 
 	public static final int DELAY_DISPLAY_CANDIDATES = 100;
 
-	private static final CharacterStyle SPAN_COMPOSING_WORD = new BackgroundColorSpan(0xFFF0FFFF);
-	private static final CharacterStyle SPAN_COMPOSING_SENTENCE = new BackgroundColorSpan(0xFF66CDAA);
-	private static final CharacterStyle SPAN_COMPOSING_CHAR = new BackgroundColorSpan(0xFF8888FF);
+	private static final CharacterStyle SPAN_COMPOSING_WORD = new BackgroundColorSpan(0xFF81DAF5);
+	private static final CharacterStyle SPAN_COMPOSING_SENTENCE = new BackgroundColorSpan(0xFFE0F2F7);
+	private static final CharacterStyle SPAN_COMPOSING_CHAR = new BackgroundColorSpan(0xFF00BFFF);
 
 	protected static final List<String> SENTENCE_STOPS = new ArrayList<String>() {{
 		add(".");
