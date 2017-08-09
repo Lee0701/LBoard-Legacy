@@ -34,13 +34,12 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.URI;
 import java.net.URL;
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Queue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -67,6 +66,7 @@ import me.blog.hgl1002.lboard.search.engines.GoogleWebSearchEngine;
 public class LBoard extends InputMethodService {
 
 	public static final int MSG_UPDATE_CANDIDATES = 1;
+	public static final int MSG_UPDATE_PREDICTION = 2;
 
 	public static final int DELAY_DISPLAY_CANDIDATES = 100;
 
@@ -104,7 +104,7 @@ public class LBoard extends InputMethodService {
 		@Override
 		public void handleMessage(Message msg) {
 			switch (msg.what) {
-			case MSG_UPDATE_CANDIDATES:
+			case MSG_UPDATE_PREDICTION:
 				List<Word> candidatesList = new ArrayList<>();
 				Word[] previousWords = Arrays.copyOfRange(chain.getAll(), 1, chain.getAll().length);
 				Word[] candidates = dictionary.searchNextWord(LBoardDictionary.SEARCH_CHAIN, LBoardDictionary.ORDER_BY_FREQUENCY, previousWord, previousWords);
@@ -116,6 +116,13 @@ public class LBoard extends InputMethodService {
 				}
 				candidates = new Word[candidatesList.size()];
 				candidatesViewManager.setCandidates(candidatesList.toArray(candidates));
+				break;
+
+			case MSG_UPDATE_CANDIDATES:
+				String stroke = Normalizer.normalize(currentWord, Normalizer.Form.NFD);
+				stroke = Normalizer.normalize(stroke, Normalizer.Form.NFKD);
+				candidates = dictionary.searchCurrentWord(LBoardDictionary.SEARCH_PREFIX, LBoardDictionary.ORDER_BY_FREQUENCY, stroke);
+				candidatesViewManager.setCandidates(candidates);
 				break;
 			}
 		}
@@ -133,6 +140,7 @@ public class LBoard extends InputMethodService {
 			} else {
 				composeChar(composing);
 				updateInput();
+				updateCandidates();
 			}
 		}
 
@@ -157,7 +165,7 @@ public class LBoard extends InputMethodService {
 			composeWord(((String) candidate));
 			updateInput();
 			commitWord(true);
-			updateCandidates();
+			updatePrediction();
 			commitText(" ");
 		}
 	};
@@ -260,6 +268,10 @@ public class LBoard extends InputMethodService {
 		return this.mainInputView;
 	}
 
+	public void updatePrediction() {
+		handler.sendMessageDelayed(handler.obtainMessage(MSG_UPDATE_PREDICTION), DELAY_DISPLAY_CANDIDATES);
+	}
+
 	public void updateCandidates() {
 		handler.sendMessageDelayed(handler.obtainMessage(MSG_UPDATE_CANDIDATES), DELAY_DISPLAY_CANDIDATES);
 	}
@@ -281,7 +293,10 @@ public class LBoard extends InputMethodService {
 	public void onStartInputView(EditorInfo info, boolean restarting) {
 		super.onStartInputView(info, restarting);
 		if(restarting) {
-			learnWord(new Word(currentWord, null), start, false);
+			String stroke = Normalizer.normalize(currentWord, Normalizer.Form.NFD);
+			Word word = new Word(currentWord, stroke, 1);
+			learnWord(word);
+			learnWordChain(word, start, false);
 			previousWord = currentWord;
 			resetComposing();
 			updateInput();
@@ -292,7 +307,7 @@ public class LBoard extends InputMethodService {
 			currentWord = "";
 			previousWord = "";
 		}
-		updateCandidates();
+		updatePrediction();
 	}
 
 	@Override
@@ -338,6 +353,8 @@ public class LBoard extends InputMethodService {
 						if(composingWord.length() > 0) {
 							composingWord = composingWord.substring(0, composingWord.length() - 1);
 							updateInput();
+							if(currentWord.isEmpty()) updatePrediction();
+							else updateCandidates();
 						} else {
 							ic.sendKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DEL));
 							ic.sendKeyEvent(new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_DEL));
@@ -372,14 +389,14 @@ public class LBoard extends InputMethodService {
 			switch (event.getKeyCode()) {
 			case KeyEvent.KEYCODE_SPACE:
 				commitWord(true);
-				updateCandidates();
+				updatePrediction();
 				break;
 
 			case KeyEvent.KEYCODE_ENTER:
 			case KeyEvent.KEYCODE_PERIOD:
 				commitWord(true);
 				start = true;
-				updateCandidates();
+				updatePrediction();
 				break;
 
 			}
@@ -514,9 +531,11 @@ public class LBoard extends InputMethodService {
 	public void commitWord(boolean learn) {
 		commitComposing();
 		if(learn) {
-			Word word = new Word(currentWord, null);
-			if(start) learnWord(word, true, false);
-			learnWord(word, false, false);
+			String stroke = Normalizer.normalize(currentWord, Normalizer.Form.NFD);
+			Word word = new Word(currentWord, stroke, 1);
+			learnWord(word);
+			if(start) learnWordChain(word, true, false);
+			learnWordChain(word, false, false);
 			start = false;
 		}
 		InputConnection ic = getCurrentInputConnection();
@@ -527,7 +546,14 @@ public class LBoard extends InputMethodService {
 		currentWord = "";
 	}
 
-	public void learnWord(Word word, boolean start, boolean end) {
+	public void learnWord(Word word) {
+		if(dictionary instanceof SQLiteDictionary && word.getCandidate() != "") {
+			SQLiteDictionary dictionary = (SQLiteDictionary) this.dictionary;
+			dictionary.learnWord(word);
+		}
+	}
+
+	public void learnWordChain(Word word, boolean start, boolean end) {
 		if(dictionary instanceof SQLiteDictionary && word.getCandidate() != "") {
 			SQLiteDictionary dictionary = (SQLiteDictionary) this.dictionary;
 			if(start || end) {
@@ -539,12 +565,12 @@ public class LBoard extends InputMethodService {
 				} else {
 					chain = new WordChain(new Word[] {word, WordChain.END, WordChain.END});
 				}
-				dictionary.learn(chain);
+				dictionary.learnChain(chain);
 			} else {
 				WordChain prev = this.chain;
 				if(prev == null) prev = new WordChain(new Word[] {WordChain.START, WordChain.START, WordChain.START});
 				WordChain chain = new WordChain(new Word[] {prev.get(1), prev.get(2), word});
-				dictionary.learn(chain);
+				dictionary.learnChain(chain);
 				this.chain = chain;
 			}
 		}

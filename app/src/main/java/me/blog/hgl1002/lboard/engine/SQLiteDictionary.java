@@ -25,8 +25,15 @@ public class SQLiteDictionary implements LBoardDictionary {
 	protected static final String COLUMN_NAME_PREVIOUS = "previous";
 	protected static final String COLUMN_NAME_FREQUENCY = "frequency";
 
+	public static final int CHAIN_DELETION_THRESHOLD = 20;
+	public static final int CHAIN_DELETION_UNIT = 3;
+
 	public static final int WORD_DELETION_THRESHOLD = 20;
 	public static final int WORD_DELETION_UNIT = 3;
+
+	public static final int WORD_DELETION_PERIOD = 10;
+
+	int nextDeletion = WORD_DELETION_PERIOD;
 
 	public SQLiteDictionary(String dbFilePath) {
 		if(dbFilePath != null) {
@@ -40,7 +47,8 @@ public class SQLiteDictionary implements LBoardDictionary {
 		String sql = "create table if not exists " + name + " "
 				+ "(" + COLUMN_NAME_ID + " integer primary key autoincrement, "
 				+ COLUMN_NAME_STROKE + " text, "
-				+ COLUMN_NAME_CANDIDATE + " text)";
+				+ COLUMN_NAME_CANDIDATE + " text, "
+				+ COLUMN_NAME_FREQUENCY + " integer)";
 		if(dbDictionary != null) {
 			dbDictionary.execSQL(sql);
 		}
@@ -65,7 +73,23 @@ public class SQLiteDictionary implements LBoardDictionary {
 
 	@Override
 	public Word[] searchCurrentWord(int operation, int order, String keyString) {
-		return null;
+		String sql = "select * from " + TABLE_NAME_DIC
+				+ " where " + COLUMN_NAME_STROKE + " like ?"
+				+ " order by " + COLUMN_NAME_FREQUENCY + " desc ";
+		String[] args = new String[] {
+				keyString + "%"
+		};
+		Cursor cursor = dbDictionary.rawQuery(sql, args);
+		List<Word> words = new ArrayList<>();
+		while(cursor.moveToNext()) {
+			String candidate = cursor.getString(cursor.getColumnIndex(COLUMN_NAME_CANDIDATE));
+			String stroke = cursor.getString(cursor.getColumnIndex(COLUMN_NAME_STROKE));
+			int frequency = cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_FREQUENCY));
+			Word word = new Word(candidate, stroke, frequency);
+			words.add(word);
+		}
+		Word[] result = new Word[words.size()];
+		return words.toArray(result);
 	}
 
 	@Override
@@ -120,7 +144,58 @@ public class SQLiteDictionary implements LBoardDictionary {
 		return list.toArray(result);
 	}
 
-	public int learn(WordChain chain) {
+	public int learnWord(Word word) {
+
+		if(--nextDeletion <= 0) {
+			deleteUnusedWords();
+			nextDeletion = WORD_DELETION_PERIOD;
+		}
+
+		if(word.getStroke() == null) return -1;
+
+		String candidate = word.getCandidate();
+		String stroke = word.getStroke();
+		int frequency = word.getFrequency();
+		if(frequency == 0) frequency = 1;
+
+		String sql = "select * from " + TABLE_NAME_DIC
+				+ " where " + COLUMN_NAME_STROKE + "=?"
+				+ " and " + COLUMN_NAME_CANDIDATE + "=?";
+		String[] args = new String[] {
+				stroke,
+				candidate
+		};
+		Cursor cursor = dbDictionary.rawQuery(sql, args);
+		if(cursor.getCount() > 0) {
+			cursor.moveToNext();
+			int freq = cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_FREQUENCY));
+			cursor.close();
+			sql = "update " + TABLE_NAME_DIC
+					+ " set " + COLUMN_NAME_FREQUENCY + "=?"
+					+ " where " + COLUMN_NAME_STROKE + "=?"
+					+ " and " + COLUMN_NAME_CANDIDATE + "=?";
+			args = new String[] {
+					String.valueOf(frequency + freq),
+					stroke,
+					candidate
+			};
+			dbDictionary.execSQL(sql, args);
+			return 2;
+		}
+		sql = "insert into " + TABLE_NAME_DIC + " ("
+				+ COLUMN_NAME_STROKE + ", "
+				+ COLUMN_NAME_CANDIDATE + ", "
+				+ COLUMN_NAME_FREQUENCY + ") values(?, ?, ?)";
+		args = new String[] {
+				stroke,
+				candidate,
+				String.valueOf(frequency)
+		};
+		dbDictionary.execSQL(sql, args);
+		return 1;
+	}
+
+	public int learnChain(WordChain chain) {
 		String previous = getPreviousString(chain);
 
 		deleteUnusedChains(previous);
@@ -160,11 +235,7 @@ public class SQLiteDictionary implements LBoardDictionary {
 				candidate,
 				"1"
 		};
-		try {
-			dbDictionary.execSQL(sql, args);
-		} catch(Exception e) {
-			return -1;
-		}
+		dbDictionary.execSQL(sql, args);
 		return 1;
 	}
 
@@ -178,7 +249,7 @@ public class SQLiteDictionary implements LBoardDictionary {
 				+ " and " + COLUMN_NAME_FREQUENCY + " > ?";
 		String[] args = new String[] {
 				previous,
-				String.valueOf(WORD_DELETION_THRESHOLD)
+				String.valueOf(CHAIN_DELETION_THRESHOLD)
 		};
 		Cursor cursor = dbDictionary.rawQuery(sql, args);
 		if(cursor.getCount() > 0) {
@@ -186,8 +257,30 @@ public class SQLiteDictionary implements LBoardDictionary {
 					+ " set " + COLUMN_NAME_FREQUENCY +  " = " + COLUMN_NAME_FREQUENCY + " / ?"
 					+ " where " + COLUMN_NAME_PREVIOUS + " = ?";
 			args = new String[] {
-					String.valueOf(WORD_DELETION_UNIT),
+					String.valueOf(CHAIN_DELETION_UNIT),
 					previous
+			};
+			dbDictionary.execSQL(sql, args);
+			sql = "delete from " + TABLE_NAME_CHAINS
+					+ " where " + COLUMN_NAME_FREQUENCY + " <= 0";
+			dbDictionary.execSQL(sql);
+			return 1;
+		}
+		return 0;
+	}
+
+	public int deleteUnusedWords() {
+		String sql = "select * from " + TABLE_NAME_DIC
+				+ " where " + COLUMN_NAME_FREQUENCY + " > ?";
+		String[] args = new String[] {
+				String.valueOf(WORD_DELETION_THRESHOLD)
+		};
+		Cursor cursor = dbDictionary.rawQuery(sql, args);
+		if(cursor.getCount() > 0) {
+			sql = "update " + TABLE_NAME_DIC
+					+ " set " + COLUMN_NAME_FREQUENCY +  " = " + COLUMN_NAME_FREQUENCY + " / ?";
+			args = new String[] {
+					String.valueOf(WORD_DELETION_UNIT),
 			};
 			dbDictionary.execSQL(sql, args);
 			sql = "delete from " + TABLE_NAME_CHAINS
