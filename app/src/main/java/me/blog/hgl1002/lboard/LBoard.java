@@ -81,6 +81,13 @@ public class LBoard extends InputMethodService {
 	private static final CharacterStyle SPAN_COMPOSING_SENTENCE = new BackgroundColorSpan(0xFF66CDAA);
 	private static final CharacterStyle SPAN_COMPOSING_CHAR = new BackgroundColorSpan(0xFF8888FF);
 
+	protected static final List<String> SENTENCE_STOPS = new ArrayList<String>() {{
+		add(".");
+		add(",");
+		add("?");
+		add("!");
+	}};
+
 	protected ViewGroup mainInputView;
 	protected View keyboardView;
 	protected View searchView;
@@ -103,6 +110,8 @@ public class LBoard extends InputMethodService {
 	private boolean searchViewShown = false;
 	private String searchText = "", searchTextComposing = "";
 
+	protected List<String> sentenceStops;
+
 	private String composingChar;
 	private String composingWord;
 	private String composingCharStroke;
@@ -121,13 +130,13 @@ public class LBoard extends InputMethodService {
 				WordChain chain = getWordChain(sentence, 0);
 				candidates = dictionary.searchNextWord(LBoardDictionary.SEARCH_CHAIN, LBoardDictionary.ORDER_BY_FREQUENCY, composingWord, chain.getAll());
 				if(start) {
-					Word[] start = new Word[] {WordChain.START, WordChain.START, chain.get(WordChain.DEFAULT_LENGTH-1)};
+					Word[] start = new Word[] {WordChain.START, WordChain.START, WordChain.START};
 					List<Word> list = new ArrayList<>();
 					list.addAll(Arrays.asList(candidates));
 					list.addAll(Arrays.asList(
 							dictionary.searchNextWord(LBoardDictionary.SEARCH_CHAIN, LBoardDictionary.ORDER_BY_FREQUENCY, composingWord, start)));
 					candidates = new Word[list.size()];
-					list.toArray(candidates);
+					candidates = list.toArray(candidates);
 				}
 				candidatesViewManager.setCandidates(candidates);
 				break;
@@ -192,6 +201,8 @@ public class LBoard extends InputMethodService {
 	@Override
 	public void onCreate() {
 		super.onCreate();
+
+		sentenceStops = SENTENCE_STOPS;
 
 		slideDown = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.slide_down);
 		slideUp = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.slide_up);
@@ -312,8 +323,15 @@ public class LBoard extends InputMethodService {
 			commitSentence(sentence, true, true);
 			startNewSentence(sentence);
 			updateInput();
-			updatePrediction();
 			start = true;
+			updatePrediction();
+		} else {
+			commitComposingChar();
+			clearComposing();
+			startNewSentence(sentence);
+			updateInput();
+			start = true;
+			updatePrediction();
 		}
 	}
 
@@ -417,7 +435,6 @@ public class LBoard extends InputMethodService {
 				return true;
 
 			case KeyEvent.KEYCODE_ENTER:
-			case KeyEvent.KEYCODE_PERIOD:
 				commitComposingChar();
 				if(!composingWord.isEmpty()) appendWord(composingWord, composingWordStroke);
 				clearComposing();
@@ -544,10 +561,40 @@ public class LBoard extends InputMethodService {
 			searchViewManager.setText(searchText + searchTextComposing);
 		} else {
 			commitComposingChar();
-			composingWordStrokeHistory.push(composingWordStroke);
-			composingWord += text;
-			composingWordStroke += text;
-			updateInput();
+			EditorInfo info = getCurrentInputEditorInfo();
+			switch(info.inputType & EditorInfo.TYPE_MASK_CLASS) {
+			case EditorInfo.TYPE_CLASS_TEXT:
+				switch(info.inputType & EditorInfo.TYPE_MASK_VARIATION) {
+				case EditorInfo.TYPE_TEXT_VARIATION_PASSWORD:
+				case EditorInfo.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD:
+				case EditorInfo.TYPE_TEXT_VARIATION_WEB_PASSWORD:
+					getCurrentInputConnection().commitText(text, 1);
+					break;
+
+				default:
+					if(sentenceStops.contains(text)) {
+						commitComposingChar();
+						composingWordStrokeHistory.push(composingWordStroke);
+						composingWord += text;
+						composingWordStroke += text;
+						appendWord(composingWord, composingWordStroke);
+						clearComposing();
+						updateInput();
+						start = true;
+						updatePrediction();
+					} else {
+						composingWordStrokeHistory.push(composingWordStroke);
+						composingWord += text;
+						composingWordStroke += text;
+						updateInput();
+						updateCandidates();
+					}
+				}
+				break;
+
+			default:
+				getCurrentInputConnection().commitText(text, 1);
+			}
 		}
 	}
 
