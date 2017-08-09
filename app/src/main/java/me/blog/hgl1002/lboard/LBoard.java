@@ -110,6 +110,8 @@ public class LBoard extends InputMethodService {
 	private Stack<String> composingWordStrokeHistory = new Stack<>();
 	private Sentence sentence;
 
+	private boolean start;
+
 	Handler handler = new Handler() {
 		@Override
 		public void handleMessage(Message msg) {
@@ -118,6 +120,15 @@ public class LBoard extends InputMethodService {
 			case MSG_UPDATE_PREDICTION:
 				WordChain chain = getWordChain(sentence, 0);
 				candidates = dictionary.searchNextWord(LBoardDictionary.SEARCH_CHAIN, LBoardDictionary.ORDER_BY_FREQUENCY, composingWord, chain.getAll());
+				if(start) {
+					Word[] start = new Word[] {WordChain.START, WordChain.START, chain.get(WordChain.DEFAULT_LENGTH-1)};
+					List<Word> list = new ArrayList<>();
+					list.addAll(Arrays.asList(candidates));
+					list.addAll(Arrays.asList(
+							dictionary.searchNextWord(LBoardDictionary.SEARCH_CHAIN, LBoardDictionary.ORDER_BY_FREQUENCY, composingWord, start)));
+					candidates = new Word[list.size()];
+					list.toArray(candidates);
+				}
 				candidatesViewManager.setCandidates(candidates);
 				break;
 
@@ -302,6 +313,7 @@ public class LBoard extends InputMethodService {
 			startNewSentence(sentence);
 			updateInput();
 			updatePrediction();
+			start = true;
 		}
 	}
 
@@ -367,6 +379,8 @@ public class LBoard extends InputMethodService {
 						}
 					}
 				}
+			} else {
+				if(sentence.size() <= 0 && composingWord.isEmpty() && composingChar.isEmpty()) updatePrediction();
 			}
 			return true;
 		}
@@ -399,6 +413,7 @@ public class LBoard extends InputMethodService {
 				clearComposing();
 				updateInput();
 				updatePrediction();
+				start = false;
 				return true;
 
 			case KeyEvent.KEYCODE_ENTER:
@@ -410,6 +425,7 @@ public class LBoard extends InputMethodService {
 				startNewSentence(sentence);
 				updateInput();
 				updatePrediction();
+				start = true;
 				break;
 
 			}
