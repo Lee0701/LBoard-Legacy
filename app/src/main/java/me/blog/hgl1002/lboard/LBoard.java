@@ -116,7 +116,7 @@ public class LBoard extends InputMethodService {
 			Word[] candidates;
 			switch (msg.what) {
 			case MSG_UPDATE_PREDICTION:
-				WordChain chain = getCurrentChain();
+				WordChain chain = getWordChain(sentence, 0);
 				candidates = dictionary.searchNextWord(LBoardDictionary.SEARCH_CHAIN, LBoardDictionary.ORDER_BY_FREQUENCY, composingWord, chain.getAll());
 				candidatesViewManager.setCandidates(candidates);
 				break;
@@ -295,9 +295,13 @@ public class LBoard extends InputMethodService {
 	public void onStartInputView(EditorInfo info, boolean restarting) {
 		super.onStartInputView(info, restarting);
 		if(restarting) {
-			startNewSentence(sentence);
+			commitComposingChar();
+			if(!composingWord.isEmpty()) appendWord(composingWord, composingWordStroke);
 			clearComposing();
+			commitSentence(sentence, true, true);
+			startNewSentence(sentence);
 			updateInput();
+			updatePrediction();
 		}
 	}
 
@@ -577,12 +581,25 @@ public class LBoard extends InputMethodService {
 	}
 
 	public void commitSentence(Sentence sentence, boolean learn) {
+		this.commitSentence(sentence, learn, false);
+	}
+
+	public void commitSentence(Sentence sentence, boolean learn, boolean clear) {
 		InputConnection ic = getCurrentInputConnection();
 
 		ic.setComposingText("", 1);
 		ic.finishComposingText();
 
-		ic.commitText(sentence.getCandidate(), 1);
+		if(!clear) ic.commitText(sentence.getCandidate(), 1);
+
+		if(learn) {
+			for(int i = 0 ; i < sentence.size() ; i++) {
+				WordChain chain = getWordChain(sentence, i);
+				learnWordChain(chain);
+				learnWord(sentence.get(i));
+			}
+		}
+
 	}
 
 	public void learnWord(Word word) {
@@ -599,24 +616,21 @@ public class LBoard extends InputMethodService {
 		}
 	}
 
-	public WordChain getCurrentChain() {
-		if(sentence.getPrev() != null) System.out.println("prev " + sentence.getPrev().size());
+	public WordChain getWordChain(Sentence sentence, int position) {
 		Word[] words = new Word[WordChain.DEFAULT_LENGTH];
 		for(int i = 0 ; i < words.length ; i++) {
 			int index = words.length - i - 1;
-			if(sentence.size()-1 - i < 0) {
-				System.out.println(i);
-				if(sentence.getPrev() != null && sentence.getPrev().size()-1 + sentence.size() - i >= 0) {
+			if(sentence.size()-1 - position - i < 0) {
+				if(sentence.getPrev() != null && sentence.getPrev().size()-1 + sentence.size() - position - i >= 0) {
 					Sentence prev = sentence.getPrev();
-					words[index] = prev.get(prev.size()-1 + sentence.size() - i);
+					words[index] = prev.get(prev.size()-1 + sentence.size() - position - i);
 				} else {
 					words[index] = WordChain.START;
 				}
 			} else {
-				words[index] = sentence.get(sentence.size()-1 - i);
+				words[index] = sentence.get(sentence.size()-1 - position - i);
 			}
 		}
-		System.out.println();
 		return new WordChain(words);
 	}
 
