@@ -16,6 +16,10 @@ import android.support.v13.view.inputmethod.EditorInfoCompat;
 import android.support.v13.view.inputmethod.InputConnectionCompat;
 import android.support.v13.view.inputmethod.InputContentInfoCompat;
 import android.support.v4.content.ContextCompat;
+import android.text.SpannableStringBuilder;
+import android.text.Spanned;
+import android.text.style.BackgroundColorSpan;
+import android.text.style.CharacterStyle;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -40,13 +44,16 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Stack;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import me.blog.hgl1002.lboard.cand.CandidatesViewManager;
 import me.blog.hgl1002.lboard.cand.TextCandidatesViewManager;
+import me.blog.hgl1002.lboard.engine.ComposingText;
 import me.blog.hgl1002.lboard.engine.LBoardDictionary;
 import me.blog.hgl1002.lboard.engine.SQLiteDictionary;
+import me.blog.hgl1002.lboard.engine.Sentence;
 import me.blog.hgl1002.lboard.engine.Word;
 import me.blog.hgl1002.lboard.engine.WordChain;
 import me.blog.hgl1002.lboard.ime.LBoardInputMethod;
@@ -70,6 +77,10 @@ public class LBoard extends InputMethodService {
 
 	public static final int DELAY_DISPLAY_CANDIDATES = 100;
 
+	private static final CharacterStyle SPAN_COMPOSING_WORD = new BackgroundColorSpan(0xFFF0FFFF);
+	private static final CharacterStyle SPAN_COMPOSING_SENTENCE = new BackgroundColorSpan(0xFF66CDAA);
+	private static final CharacterStyle SPAN_COMPOSING_CHAR = new BackgroundColorSpan(0xFF8888FF);
+
 	protected ViewGroup mainInputView;
 	protected View keyboardView;
 	protected View searchView;
@@ -92,35 +103,26 @@ public class LBoard extends InputMethodService {
 	private boolean searchViewShown = false;
 	private String searchText = "", searchTextComposing = "";
 
-	private String composingWord;
 	private String composingChar;
-
-	private String currentWord;
-	private String previousWord;
-	private WordChain chain;
-	private boolean start;
+	private String composingWord;
+	private String composingCharStroke;
+	private String composingWordStroke;
+	private Stack<String> composingWordStrokeHistory = new Stack<>();
+	private Sentence sentence;
 
 	Handler handler = new Handler() {
 		@Override
 		public void handleMessage(Message msg) {
+			Word[] candidates;
 			switch (msg.what) {
 			case MSG_UPDATE_PREDICTION:
-				List<Word> candidatesList = new ArrayList<>();
-				Word[] previousWords = Arrays.copyOfRange(chain.getAll(), 1, chain.getAll().length);
-				Word[] candidates = dictionary.searchNextWord(LBoardDictionary.SEARCH_CHAIN, LBoardDictionary.ORDER_BY_FREQUENCY, previousWord, previousWords);
-				Collections.addAll(candidatesList, candidates);
-				if(start) {
-					previousWords = new Word[] {WordChain.START, WordChain.START};
-					candidates = dictionary.searchNextWord(LBoardDictionary.SEARCH_CHAIN, LBoardDictionary.ORDER_BY_FREQUENCY, previousWord, previousWords);
-					Collections.addAll(candidatesList, candidates);
-				}
-				candidates = new Word[candidatesList.size()];
-				candidatesViewManager.setCandidates(candidatesList.toArray(candidates));
+				WordChain chain = getCurrentChain();
+				candidates = dictionary.searchNextWord(LBoardDictionary.SEARCH_CHAIN, LBoardDictionary.ORDER_BY_FREQUENCY, composingWord, chain.getAll());
+				candidatesViewManager.setCandidates(candidates);
 				break;
 
 			case MSG_UPDATE_CANDIDATES:
-				String stroke = Normalizer.normalize(currentWord, Normalizer.Form.NFD);
-				stroke = Normalizer.normalize(stroke, Normalizer.Form.NFKD);
+				String stroke = composingWordStroke + composingCharStroke;
 				candidates = dictionary.searchCurrentWord(LBoardDictionary.SEARCH_PREFIX, LBoardDictionary.ORDER_BY_FREQUENCY, stroke);
 				candidatesViewManager.setCandidates(candidates);
 				break;
@@ -131,7 +133,7 @@ public class LBoard extends InputMethodService {
 	protected CharacterGenerator.CharacterGeneratorListener characterGeneratorListener
 			 = new CharacterGenerator.CharacterGeneratorListener() {
 		@Override
-		public void onCompose(String composing) {
+		public void onCompose(CharacterGenerator source, String composing) {
 			InputConnection ic = getCurrentInputConnection();
 			if(ic == null) return;
 			if(searchViewShown) {
@@ -139,20 +141,21 @@ public class LBoard extends InputMethodService {
 				searchViewManager.setText(searchText + searchTextComposing);
 			} else {
 				composeChar(composing);
+				composingCharStroke = source.getStroke();
 				updateInput();
 				updateCandidates();
 			}
 		}
 
 		@Override
-		public void onCommit() {
+		public void onCommit(CharacterGenerator source) {
 			InputConnection ic = getCurrentInputConnection();
 			if(ic == null) return;
 			if(searchViewShown) {
 				searchText += searchTextComposing;
 				searchTextComposing = "";
 			} else {
-				commitComposing();
+				commitComposingChar();
 				updateInput();
 			}
 		}
@@ -162,11 +165,12 @@ public class LBoard extends InputMethodService {
 			 = new CandidatesViewManager.CandidatesViewListener() {
 		@Override
 		public void onSelect(Object candidate) {
-			composeWord(((String) candidate));
-			updateInput();
-			commitWord(true);
-			updatePrediction();
-			commitText(" ");
+			if(candidate instanceof Word) {
+				clearComposing();
+				appendWord((Word) candidate);
+				updateInput();
+				updatePrediction();
+			}
 		}
 	};
 
@@ -225,11 +229,11 @@ public class LBoard extends InputMethodService {
 		candidatesViewManager = new TextCandidatesViewManager();
 		candidatesViewManager.setListener(candidatesViewListener);
 
-		resetComposing();
-		chain = new WordChain(new Word[] {WordChain.START, WordChain.START, WordChain.START});
-		currentWord = "";
-		previousWord = "";
+		clearComposing();
 
+		startNewSentence(null);
+
+		updatePrediction();
 	}
 
 	@Override
@@ -277,9 +281,7 @@ public class LBoard extends InputMethodService {
 	}
 
 	public void updateInput() {
-		InputConnection ic = getCurrentInputConnection();
-		currentWord = composingWord + composingChar;
-		ic.setComposingText(currentWord, 1);
+		composeSentence(sentence, composingWord, composingChar);
 	}
 
 	public void updateInputView() {
@@ -293,21 +295,10 @@ public class LBoard extends InputMethodService {
 	public void onStartInputView(EditorInfo info, boolean restarting) {
 		super.onStartInputView(info, restarting);
 		if(restarting) {
-			String stroke = Normalizer.normalize(currentWord, Normalizer.Form.NFD);
-			Word word = new Word(currentWord, stroke, 1);
-			learnWord(word);
-			learnWordChain(word, start, false);
-			previousWord = currentWord;
-			resetComposing();
+			startNewSentence(sentence);
+			clearComposing();
 			updateInput();
-			start = true;
-		} else {
-			resetComposing();
-			chain = new WordChain(new Word[] {WordChain.START, WordChain.START, WordChain.START});
-			currentWord = "";
-			previousWord = "";
 		}
-		updatePrediction();
 	}
 
 	@Override
@@ -351,11 +342,22 @@ public class LBoard extends InputMethodService {
 						searchViewManager.setText(searchText + searchTextComposing);
 					} else {
 						if(composingWord.length() > 0) {
-							composingWord = composingWord.substring(0, composingWord.length() - 1);
+							composingWord = composingWord.substring(0, composingWord.length()-1);
+							if(composingWordStrokeHistory.isEmpty()) {
+								composingWordStroke = "";
+							} else {
+								composingWordStroke = composingWordStrokeHistory.pop();
+							}
 							updateInput();
-							if(currentWord.isEmpty()) updatePrediction();
-							else updateCandidates();
+							updateCandidates();
+						} else if(sentence.size() > 0) {
+							Word word = sentence.pop();
+							this.composingWord = word.getCandidate();
+							this.composingWordStroke = word.getStroke();
+							updateInput();
+							updateCandidates();
 						} else {
+							clearComposing();
 							ic.sendKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DEL));
 							ic.sendKeyEvent(new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_DEL));
 						}
@@ -388,14 +390,21 @@ public class LBoard extends InputMethodService {
 		if(event.getAction() == KeyEvent.ACTION_DOWN) {
 			switch (event.getKeyCode()) {
 			case KeyEvent.KEYCODE_SPACE:
-				commitWord(true);
+				commitComposingChar();
+				appendWord(composingWord, composingWordStroke);
+				clearComposing();
+				updateInput();
 				updatePrediction();
-				break;
+				return true;
 
 			case KeyEvent.KEYCODE_ENTER:
 			case KeyEvent.KEYCODE_PERIOD:
-				commitWord(true);
-				start = true;
+				commitComposingChar();
+				if(!composingWord.isEmpty()) appendWord(composingWord, composingWordStroke);
+				clearComposing();
+				commitSentence(sentence, true);
+				startNewSentence(sentence);
+				updateInput();
 				updatePrediction();
 				break;
 
@@ -404,12 +413,8 @@ public class LBoard extends InputMethodService {
 		if (event.getAction() == KeyEvent.ACTION_UP && event.getKeyCode() == -114) {
 			shareDictionary();
 		}
-		return ret;
-	}
 
-	public void resetComposing() {
-		composingWord = "";
-		composingChar = "";
+		return ret;
 	}
 
 	public void shareDictionary() {
@@ -505,45 +510,79 @@ public class LBoard extends InputMethodService {
 		else return result;
 	}
 
+	public void clearComposing() {
+		composingWord = "";
+		composingChar = "";
+		composingWordStroke = "";
+		composingCharStroke = "";
+		composingWordStrokeHistory.clear();
+	}
+
 	public void commitText(CharSequence text) {
 		if(searchViewShown) {
 			searchText += text;
 			searchViewManager.setText(searchText + searchTextComposing);
 		} else {
-			getCurrentInputConnection().commitText(text, 1);
+			commitComposingChar();
+			composingWordStrokeHistory.push(composingWordStroke);
+			composingWord += text;
+			composingWordStroke += text;
+			updateInput();
 		}
 	}
 
-	public void composeChar(String composing) {
-		composingChar = composing;
+	public void composeChar(String composingChar) {
+		this.composingChar = composingChar;
 	}
 
-	public void composeWord(String word) {
-		commitComposing();
-		composingWord = word;
+	public void commitComposingChar() {
+		this.composingWord += composingChar;
+		this.composingChar = "";
+		if(composingWordStrokeHistory.isEmpty() || composingWordStrokeHistory.peek() != composingWordStroke)
+			composingWordStrokeHistory.push(composingWordStroke);
+		this.composingWordStroke += composingCharStroke;
+		this.composingCharStroke = "";
 	}
 
-	public void commitComposing() {
-		composingWord += composingChar;
-		composingChar = "";
+	public void appendWord(String composingWord, String ComposingWordStroke) {
+		Word word = new Word(composingWord, composingWordStroke, 1);
+		this.appendWord(word);
 	}
 
-	public void commitWord(boolean learn) {
-		commitComposing();
-		if(learn) {
-			String stroke = Normalizer.normalize(currentWord, Normalizer.Form.NFD);
-			Word word = new Word(currentWord, stroke, 1);
-			learnWord(word);
-			if(start) learnWordChain(word, true, false);
-			learnWordChain(word, false, false);
-			start = false;
-		}
+	public void appendWord(Word word) {
+		sentence.append(word);
+	}
+
+	public void startNewSentence(Sentence prev) {
+		sentence = new Sentence(prev, null, null);
+	}
+
+	public void composeSentence(Sentence sentence, String composingWord, String composingChar) {
+		if(sentence == null) return;
 		InputConnection ic = getCurrentInputConnection();
-		ic.setComposingText(currentWord, 1);
+		SpannableStringBuilder str = new SpannableStringBuilder();
+		str.append(sentence.getCandidate());
+		if(str.length() > 0) str.append(" ");
+		int start = 0, end = str.length();
+		str.setSpan(SPAN_COMPOSING_SENTENCE, start, end, Spanned.SPAN_COMPOSING);
+		str.append(composingWord);
+		start = end;
+		end = str.length();
+		str.setSpan(SPAN_COMPOSING_WORD, start, end, Spanned.SPAN_COMPOSING);
+		str.append(composingChar);
+		start = end;
+		end = str.length();
+		str.setSpan(SPAN_COMPOSING_CHAR, start, end, Spanned.SPAN_COMPOSING);
+		ic.setComposingText(str, 1);
+	}
+
+	public void commitSentence(Sentence sentence, boolean learn) {
+		InputConnection ic = getCurrentInputConnection();
+
+		ic.setComposingText("", 1);
 		ic.finishComposingText();
-		previousWord = currentWord;
-		composingWord = "";
-		currentWord = "";
+
+		ic.commitText(sentence.getCandidate(), 1);
 	}
 
 	public void learnWord(Word word) {
@@ -553,27 +592,32 @@ public class LBoard extends InputMethodService {
 		}
 	}
 
-	public void learnWordChain(Word word, boolean start, boolean end) {
-		if(dictionary instanceof SQLiteDictionary && word.getCandidate() != "") {
+	public void learnWordChain(WordChain prev) {
+		if(dictionary instanceof SQLiteDictionary) {
 			SQLiteDictionary dictionary = (SQLiteDictionary) this.dictionary;
-			if(start || end) {
-				WordChain chain;
-				if(start && end) {
-					chain = new WordChain(new Word[] {WordChain.START, word, WordChain.END});
-				} else if(start) {
-					chain = new WordChain(new Word[] {WordChain.START, WordChain.START, word});
+			dictionary.learnChain(prev);
+		}
+	}
+
+	public WordChain getCurrentChain() {
+		if(sentence.getPrev() != null) System.out.println("prev " + sentence.getPrev().size());
+		Word[] words = new Word[WordChain.DEFAULT_LENGTH];
+		for(int i = 0 ; i < words.length ; i++) {
+			int index = words.length - i - 1;
+			if(sentence.size()-1 - i < 0) {
+				System.out.println(i);
+				if(sentence.getPrev() != null && sentence.getPrev().size()-1 + sentence.size() - i >= 0) {
+					Sentence prev = sentence.getPrev();
+					words[index] = prev.get(prev.size()-1 + sentence.size() - i);
 				} else {
-					chain = new WordChain(new Word[] {word, WordChain.END, WordChain.END});
+					words[index] = WordChain.START;
 				}
-				dictionary.learnChain(chain);
 			} else {
-				WordChain prev = this.chain;
-				if(prev == null) prev = new WordChain(new Word[] {WordChain.START, WordChain.START, WordChain.START});
-				WordChain chain = new WordChain(new Word[] {prev.get(1), prev.get(2), word});
-				dictionary.learnChain(chain);
-				this.chain = chain;
+				words[index] = sentence.get(sentence.size()-1 - i);
 			}
 		}
+		System.out.println();
+		return new WordChain(words);
 	}
 
 	public void commitImage(String mimeType, Uri contentUri, String imageDescription) {

@@ -1,5 +1,7 @@
 package me.blog.hgl1002.lboard.ime.charactergenerator;
 
+import me.blog.hgl1002.lboard.engine.StringSegment;
+
 /**
  * CharacterGenerator.
  *
@@ -28,12 +30,14 @@ public interface CharacterGenerator {
 	 */
 	public void resetComposing();
 
+	public String getStroke();
+
 	public void setListener(CharacterGeneratorListener listener);
 	public void removeListener();
 
 	public static interface CharacterGeneratorListener {
-		public void onCompose(String composing);
-		public void onCommit();
+		public void onCompose(CharacterGenerator source, String composing);
+		public void onCommit(CharacterGenerator source);
 	}
 
 }

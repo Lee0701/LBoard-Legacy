@@ -52,7 +52,7 @@ public class TextCandidatesViewManager implements CandidatesViewManager {
 			layout.addView(textView);
 			return;
 		}
-		for(Object o : candidates) {
+		for(final Object o : candidates) {
 			String str = o.toString();
 			TextView textView = new TextView(context);
 			textView.setText(str);
@@ -61,7 +61,7 @@ public class TextCandidatesViewManager implements CandidatesViewManager {
 			textView.setOnClickListener(new View.OnClickListener() {
 				@Override
 				public void onClick(View v) {
-					if(listener != null) listener.onSelect(((TextView) v).getText());
+					if(listener != null) listener.onSelect(o);
 				}
 			});
 			layout.addView(textView);
