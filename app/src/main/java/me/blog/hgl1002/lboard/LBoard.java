@@ -39,10 +39,8 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URL;
-import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Stack;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -50,7 +48,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import me.blog.hgl1002.lboard.cand.CandidatesViewManager;
 import me.blog.hgl1002.lboard.cand.TextCandidatesViewManager;
-import me.blog.hgl1002.lboard.engine.ComposingText;
 import me.blog.hgl1002.lboard.engine.LBoardDictionary;
 import me.blog.hgl1002.lboard.engine.SQLiteDictionary;
 import me.blog.hgl1002.lboard.engine.Sentence;
@@ -90,7 +87,9 @@ public class LBoard extends InputMethodService {
 
 	protected ViewGroup mainInputView;
 	protected View keyboardView;
+	protected ViewGroup mainCandidatesView;
 	protected View searchView;
+	protected View candidatesView;
 
 	protected SearchViewManager searchViewManager;
 
@@ -260,8 +259,7 @@ public class LBoard extends InputMethodService {
 
 	@Override
 	public View onCreateCandidatesView() {
-		View candidatesView = candidatesViewManager.createView(this);
-		return candidatesView;
+		return super.onCreateCandidatesView();
 	}
 
 	@Override
@@ -277,15 +275,18 @@ public class LBoard extends InputMethodService {
 			public void onClick(View v) {
 				searchViewShown = !searchViewShown;
 				if(searchViewShown) {
-					v.setVisibility(View.INVISIBLE);
+					candidatesView.setVisibility(View.INVISIBLE);
 				} else {
-					v.setVisibility(View.VISIBLE);
+					candidatesView.setVisibility(View.VISIBLE);
 				}
 			}
 		});
 
 		searchView = searchViewManager.createView(this);
 		mainInputView.addView(searchView);
+
+		candidatesView = candidatesViewManager.createView(this);
+		mainInputView.addView(candidatesView);
 
 		linearLayout.bringToFront();
 
@@ -522,8 +523,8 @@ public class LBoard extends InputMethodService {
 	}
 
 	public void unhideKeyboardView() {
+		candidatesView.setVisibility(View.VISIBLE);
 		keyboardView.setVisibility(View.VISIBLE);
-		keyboardView.startAnimation(slideUp);
 		searchButton.setVisibility(View.VISIBLE);
 	}
 

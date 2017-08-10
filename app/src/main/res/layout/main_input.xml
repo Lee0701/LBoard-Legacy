@@ -10,7 +10,7 @@
 		<Button
 			android:id="@+id/search_button"
 			android:text="Google"
-			android:layout_width="match_parent"
+			android:layout_width="80dp"
 			android:layout_height="wrap_content"/>
 
 		<FrameLayout android:id="@+id/keyboard_placeholder"
