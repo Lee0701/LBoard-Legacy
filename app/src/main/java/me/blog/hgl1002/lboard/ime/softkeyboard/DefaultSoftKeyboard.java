@@ -15,7 +15,7 @@ import me.blog.hgl1002.lboard.LBoard;
 import me.blog.hgl1002.lboard.R;
 import me.blog.hgl1002.lboard.ime.SoftKeyboard;
 
-public class DefaultSoftKeyboard implements SoftKeyboard, KeyboardView.OnKeyboardActionListener {
+public class DefaultSoftKeyboard implements SoftKeyboard, KeyboardView.OnKeyboardActionListener, DefaultSoftKeyboardView.OnAdvancedActionListener {
 
 	public static final int SHIFT_OFF = 0;
 	public static final int SHIFT_ON = 1;
@@ -29,15 +29,15 @@ public class DefaultSoftKeyboard implements SoftKeyboard, KeyboardView.OnKeyboar
 	/**
 	 * 메인 키보드 뷰. 예: 한글 키보드, 영문 키보드.
 	 */
-	protected KeyboardView mainKeyboardView;
+	protected DefaultSoftKeyboardView mainKeyboardView;
 	/**
 	 * 상단 키보드 뷰. 예: 숫자열 키보드, 커서 이동 키보드.
 	 */
-	protected KeyboardView upperKeyboardView;
+	protected DefaultSoftKeyboardView upperKeyboardView;
 	/**
 	 * 하단 키보드 뷰. 예: 스페이스바, 언어 전환 키 등을 포함하는 열.
 	 */
-	protected KeyboardView lowerKeyboardView;
+	protected DefaultSoftKeyboardView lowerKeyboardView;
 	/**
 	 * 상태 뷰. 예: 한/영 상태 표시기, Shift/Alt 키 표시기.
 	 */
@@ -54,8 +54,11 @@ public class DefaultSoftKeyboard implements SoftKeyboard, KeyboardView.OnKeyboar
 	protected CharSequence[][] labels;
 
 	protected boolean shiftPressed;
+	protected boolean shiftLocked;
 
 	protected long pressTime;
+
+	protected boolean ignore;
 
 	public DefaultSoftKeyboard(LBoard parent) {
 		this.parent = parent;
@@ -66,16 +69,22 @@ public class DefaultSoftKeyboard implements SoftKeyboard, KeyboardView.OnKeyboar
 		LinearLayout mainView = new LinearLayout(context);
 		mainView.setOrientation(LinearLayout.VERTICAL);
 
-		mainKeyboardView = new KeyboardView(context, null);
-		lowerKeyboardView = new KeyboardView(context, null);
+		mainKeyboardView = new DefaultSoftKeyboardView(context, null);
+		lowerKeyboardView = new DefaultSoftKeyboardView(context, null);
 
 		mainKeyboardView.setOnKeyboardActionListener(this);
 		lowerKeyboardView.setOnKeyboardActionListener(this);
+		mainKeyboardView.setOnAdvancedActionListener(this);
+		lowerKeyboardView.setOnAdvancedActionListener(this);
 
 		mainView.addView(mainKeyboardView);
 		mainView.addView(lowerKeyboardView);
 
 		this.mainView = mainView;
+
+		this.shiftPressed = false;
+		this.shiftLocked = false;
+		parent.onKeyEvent(new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_SHIFT_LEFT), false);
 
 		updateLabels();
 		setDefaultKeyboards();
@@ -153,6 +162,7 @@ public class DefaultSoftKeyboard implements SoftKeyboard, KeyboardView.OnKeyboar
 		int duration = (int) (System.currentTimeMillis() - pressTime) / 15;
 		if(duration > 20) duration = 20;
 		if(duration >= 10) vibrator.vibrate(duration);
+		ignore = false;
 	}
 
 	@Override
@@ -160,14 +170,49 @@ public class DefaultSoftKeyboard implements SoftKeyboard, KeyboardView.OnKeyboar
 		switch(primaryCode) {
 		case KeyEvent.KEYCODE_SHIFT_LEFT:
 		case KeyEvent.KEYCODE_SHIFT_RIGHT:
+			if(shiftLocked) shiftLocked = false;
 			setShiftState(!shiftPressed);
 			parent.onKeyEvent(new KeyEvent(shiftPressed ? KeyEvent.ACTION_DOWN : KeyEvent.ACTION_UP, primaryCode), false);
+			return;
+		}
+		if(ignore) {
 			return;
 		}
 		KeyEvent event = new KeyEvent(KeyEvent.ACTION_DOWN, primaryCode);
 		boolean ret = parent.onKeyEvent(event, false);
 		parent.onKeyEvent(new KeyEvent(KeyEvent.ACTION_UP, primaryCode), false);
+		if(!shiftLocked && shiftPressed) {
+			setShiftState(false);
+			parent.onKeyEvent(new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_SHIFT_LEFT), false);
+		}
 		if(!ret) parent.getCurrentInputConnection().sendKeyEvent(event);
+	}
+
+	@Override
+	public void onLongPress(int primaryCode) {
+		if(primaryCode == KeyEvent.KEYCODE_DEL) {
+			return;
+		}
+		Vibrator vibrator = (Vibrator) parent.getSystemService(Context.VIBRATOR_SERVICE);
+		vibrator.vibrate(45);
+		if(primaryCode == KeyEvent.KEYCODE_SHIFT_LEFT || primaryCode == KeyEvent.KEYCODE_SHIFT_RIGHT) {
+			shiftLocked = true;
+			setShiftState(true);
+			parent.onKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_SHIFT_LEFT), false);
+			return;
+		}
+		if(!shiftLocked) {
+			parent.onKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_SHIFT_LEFT), false);
+			parent.onKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, primaryCode), false);
+			parent.onKeyEvent(new KeyEvent(KeyEvent.ACTION_UP, primaryCode), false);
+			parent.onKeyEvent(new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_SHIFT_LEFT), false);
+		} else {
+			parent.onKeyEvent(new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_SHIFT_LEFT), false);
+			parent.onKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, primaryCode), false);
+			parent.onKeyEvent(new KeyEvent(KeyEvent.ACTION_UP, primaryCode), false);
+			parent.onKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_SHIFT_LEFT), false);
+		}
+		ignore = true;
 	}
 
 	@Override
@@ -202,4 +247,5 @@ public class DefaultSoftKeyboard implements SoftKeyboard, KeyboardView.OnKeyboar
 	public void setLabels(CharSequence[][] labels) {
 		this.labels = labels;
 	}
+
 }
