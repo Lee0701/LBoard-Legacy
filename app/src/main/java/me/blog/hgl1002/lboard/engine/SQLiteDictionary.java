@@ -20,12 +20,12 @@ public class SQLiteDictionary implements LBoardDictionary {
 	protected static final String COLUMN_NAME_FREQUENCY = "frequency";
 
 	public static final int CHAIN_DELETION_THRESHOLD = 20;
-	public static final int CHAIN_DELETION_UNIT = 3;
+	public static final int CHAIN_DELETION_UNIT = 2;
 
-	public static final int WORD_DELETION_THRESHOLD = 20;
-	public static final int WORD_DELETION_UNIT = 3;
+	public static final int WORD_DELETION_THRESHOLD = 100;
+	public static final int WORD_DELETION_UNIT = 2;
 
-	public static final int WORD_DELETION_PERIOD = 10;
+	public static final int WORD_DELETION_PERIOD = 50;
 
 	int nextDeletion = WORD_DELETION_PERIOD;
 
