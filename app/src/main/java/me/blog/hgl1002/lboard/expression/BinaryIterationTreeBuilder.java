@@ -44,9 +44,6 @@ public class BinaryIterationTreeBuilder implements TreeBuilder {
 				while(bb.hasRemaining()) {
 					byte type = bb.get();
 					switch(type) {
-					case 0: {
-						break;
-					}
 					case TYPE_CONSTANT: {
 						long value = bb.getLong();
 						current = new ConstantTreeNode(value);
@@ -103,6 +100,9 @@ public class BinaryIterationTreeBuilder implements TreeBuilder {
 						}
 						current = new ListTreeNode(operator, nodes);
 						operands.push(current);
+						break;
+					}
+					default: {
 						break;
 					}
 					}
