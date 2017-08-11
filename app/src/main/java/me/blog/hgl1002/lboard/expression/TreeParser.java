@@ -3,15 +3,8 @@ package me.blog.hgl1002.lboard.expression;
 import java.util.HashMap;
 import java.util.Map;
 
-import me.blog.hgl1002.lboard.expression.nodes.BinaryTreeNode;
-import me.blog.hgl1002.lboard.expression.nodes.ConstantRepresentationTreeNode;
-import me.blog.hgl1002.lboard.expression.nodes.ConstantTreeNode;
-import me.blog.hgl1002.lboard.expression.nodes.ListTreeNode;
-import me.blog.hgl1002.lboard.expression.nodes.Operator;
-import me.blog.hgl1002.lboard.expression.nodes.TreeNode;
-import me.blog.hgl1002.lboard.expression.nodes.TrinominalTreeNode;
-import me.blog.hgl1002.lboard.expression.nodes.UnaryTreeNode;
-import me.blog.hgl1002.lboard.expression.nodes.VariableTreeNode;
+import me.blog.hgl1002.lboard.expression.nodes.*;
+import static me.blog.hgl1002.lboard.expression.nodes.Operator.*;
 
 public class TreeParser {
 
@@ -39,8 +32,8 @@ public class TreeParser {
 			return unaryOperation((UnaryTreeNode) node);
 		} else if (node instanceof BinaryTreeNode) {
 			return binaryOperation((BinaryTreeNode) node);
-		} else if (node instanceof TrinominalTreeNode) {
-			return trinominalOperation((TrinominalTreeNode) node);
+		} else if (node instanceof TernaryTreeNode) {
+			return trinominalOperation((TernaryTreeNode) node);
 		} else if (node instanceof ListTreeNode) {
 			return listOperation((ListTreeNode) node);
 		} else {
@@ -216,7 +209,7 @@ public class TreeParser {
 		}
 	}
 
-	public long trinominalOperation(TrinominalTreeNode node) {
+	public long trinominalOperation(TernaryTreeNode node) {
 		long left = parse(node.getLeft()), right = parse(node.getRight()), center = parse(node.getCenter());
 		switch(node.getOperator()) {
 		case CONDITION:

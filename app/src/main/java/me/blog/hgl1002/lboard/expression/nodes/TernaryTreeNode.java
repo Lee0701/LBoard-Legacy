@@ -1,10 +1,10 @@
 package me.blog.hgl1002.lboard.expression.nodes;
 
-public class TrinominalTreeNode extends TreeNode {
+public class TernaryTreeNode extends TreeNode {
 
 	TreeNode left, center, right;
 
-	public TrinominalTreeNode(Operator operator, TreeNode left, TreeNode center, TreeNode right) {
+	public TernaryTreeNode(int operator, TreeNode left, TreeNode center, TreeNode right) {
 		super(operator);
 		this.left = left;
 		this.center = center;
