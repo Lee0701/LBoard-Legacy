@@ -103,7 +103,7 @@ public class BinaryIterationTreeBuilder implements TreeBuilder {
 						break;
 					}
 					default: {
-						break;
+						return current;
 					}
 					}
 				}
