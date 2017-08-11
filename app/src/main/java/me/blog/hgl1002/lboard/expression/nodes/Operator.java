@@ -1,4 +1,4 @@
-package me.blog.hgl1002.lboard.expression;
+package me.blog.hgl1002.lboard.expression.nodes;
 
 public enum Operator {
 	NONE,
