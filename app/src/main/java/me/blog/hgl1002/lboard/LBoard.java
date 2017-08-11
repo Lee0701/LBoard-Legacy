@@ -56,6 +56,7 @@ import me.blog.hgl1002.lboard.engine.WordChain;
 import me.blog.hgl1002.lboard.ime.LBoardInputMethod;
 import me.blog.hgl1002.lboard.ime.charactergenerator.CharacterGenerator;
 import me.blog.hgl1002.lboard.ime.charactergenerator.UnicodeCharacterGenerator;
+import me.blog.hgl1002.lboard.ime.hardkeyboard.lhkb.LHKB1;
 import me.blog.hgl1002.lboard.ime.softkeyboard.DefaultSoftKeyboard;
 
 import me.blog.hgl1002.lboard.ime.KeyEventInfo;
@@ -212,7 +213,7 @@ public class LBoard extends InputMethodService {
 		generator.setListener(characterGeneratorListener);
 		generator.setCombinationTable(UnicodeCharacterGenerator.loadCombinationTable(getResources().openRawResource(R.raw.comb_sebeol)));
 		hardKeyboard.setCharacterGenerator(generator);
-		hardKeyboard.setMappings(DefaultHardKeyboard.loadMappings(getResources().openRawResource(R.raw.layout_sebeol_final)));
+		hardKeyboard.setMappings(LHKB1.loadMappings(getResources().openRawResource(R.raw.layout_sebeol_final)));
 
 		softKeyboard.createKeyboards(this, R.xml.keyboard_full_10cols, R.xml.keyboard_full_10cols, R.xml.keyboard_lower_default);
 		CharSequence[][] labels = new CharSequence[0x100][2];
@@ -231,7 +232,7 @@ public class LBoard extends InputMethodService {
 		hardKeyboard = new DefaultHardKeyboard(this);
 		generator = new UnicodeCharacterGenerator();
 		generator.setListener(characterGeneratorListener);
-		hardKeyboard.setMappings(DefaultHardKeyboard.loadMappings(getResources().openRawResource(R.raw.layout_qwerty)));
+		hardKeyboard.setMappings(LHKB1.loadMappings(getResources().openRawResource(R.raw.layout_qwerty)));
 
 		softKeyboard.createKeyboards(this, R.xml.keyboard_qwerty_4rows, R.xml.keyboard_qwerty_4rows, R.xml.keyboard_lower_default);
 
