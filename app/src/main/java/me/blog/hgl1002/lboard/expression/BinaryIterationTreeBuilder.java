@@ -29,6 +29,8 @@ public class BinaryIterationTreeBuilder implements TreeBuilder {
 		} else if(o instanceof byte[]) {
 			byte[] bytes = (byte[]) o;
 			return build(ByteBuffer.wrap(bytes));
+		} else if(o instanceof ByteBuffer) {
+			return build((ByteBuffer) o);
 		} else {
 			throw new RuntimeException("Type not supported.");
 		}
