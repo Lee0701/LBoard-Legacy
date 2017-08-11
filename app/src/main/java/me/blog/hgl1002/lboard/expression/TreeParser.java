@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import me.blog.hgl1002.lboard.expression.nodes.BinaryTreeNode;
+import me.blog.hgl1002.lboard.expression.nodes.ConstantRepresentationTreeNode;
 import me.blog.hgl1002.lboard.expression.nodes.ConstantTreeNode;
 import me.blog.hgl1002.lboard.expression.nodes.ListTreeNode;
 import me.blog.hgl1002.lboard.expression.nodes.Operator;
@@ -15,6 +16,7 @@ import me.blog.hgl1002.lboard.expression.nodes.VariableTreeNode;
 public class TreeParser {
 
 	Map<String, Long> variables = new HashMap<>();
+	Map<String, Long> constants = new HashMap<>();
 
 	public long parse(TreeNode node) {
 		if (node instanceof ConstantTreeNode) {
@@ -26,6 +28,13 @@ public class TreeParser {
 				return variables.get(variableTreeNode.getName());
 			} else
 				return 0;
+		} else if (node instanceof ConstantRepresentationTreeNode) {
+			ConstantRepresentationTreeNode representationTreeNode = (ConstantRepresentationTreeNode) node;
+			if(constants.containsKey(representationTreeNode.getName())) {
+				return constants.get(representationTreeNode.getName());
+			} else {
+				throw new RuntimeException("Constant " + representationTreeNode.getName() + " is not defined.");
+			}
 		} else if (node instanceof UnaryTreeNode) {
 			return unaryOperation((UnaryTreeNode) node);
 		} else if (node instanceof BinaryTreeNode) {
@@ -238,5 +247,13 @@ public class TreeParser {
 
 	public void setVariables(Map<String, Long> variables) {
 		this.variables = variables;
+	}
+
+	public Map<String, Long> getConstants() {
+		return constants;
+	}
+
+	public void setConstants(Map<String, Long> constants) {
+		this.constants = constants;
 	}
 }
