@@ -1,20 +1,56 @@
 package me.blog.hgl1002.lboard.expression.nodes;
 
-public enum Operator {
-	NONE,
-	PLUS, MINUS, NOT, INVERT,
-	INCREMENT_LEFT, INCREMENT_RIGHT, DECREMENT_LEFT, DECREMENT_RIGHT,
+public class Operator {
+	public static final int NONE = 0;
 
-	ADDITION, SUBTRACTION, MULTIPLICATION, DIVISION, MOD,
-	SHIFT_LEFT, SHIFT_RIGHT,
-	COMPARE_GREATER, COMPARE_SMALLER, COMPARE_GREATER_OR_EQUAL, COMPARE_SMALLER_OR_EQUAL,
-	EQUALS, NOT_EQUALS,
-	BITWISE_AND, BITWISE_OR, BITWISE_XOR,
-	LOGICAL_AND, LOGICAL_OR,
+	public static final int PLUS = 1;
+	public static final int MINUS = 2;
+	public static final int NOT = 3;
+	public static final int INVERT = 4;
 
-	CONDITION,
+	public static final int INCREMENT_LEFT = 5;
+	public static final int INCREMENT_RIGHT = 6;
+	public static final int DECREMENT_LEFT = 7;
+	public static final int DECREMENT_RIGHT = 8;
 
-	ASSIGNMENT, ASSIGNMENT_ADDITION, ASSIGNMENT_SUBTRACTION, ASSIGNMENT_MULTIPLICATION, ASSIGNMENT_DIVISION, ASSIGNMENT_MOD,
-	ASSIGNMENT_SHIFT_LEFT, ASSIGNMENT_SHIFT_RIGHT, ASSIGNMENT_AND, ASSIGNMENT_OR, ASSIGNMENT_XOR,
-	COMMA
+	public static final int ADDITION = 9;
+	public static final int SUBTRACTION = 10;
+	public static final int MULTIPLICATION = 11;
+	public static final int DIVISION = 12;
+	public static final int MOD = 13;
+
+	public static final int SHIFT_LEFT = 14;
+	public static final int SHIFT_RIGHT = 15;
+
+	public static final int COMPARE_GREATER = 16;
+	public static final int COMPARE_SMALLER = 17;
+	public static final int COMPARE_GREATER_OR_EQUAL = 18;
+	public static final int COMPARE_SMALLER_OR_EQUAL = 19;
+
+	public static final int EQUALS = 20;
+	public static final int NOT_EQUALS = 21;
+
+	public static final int BITWISE_AND = 22;
+	public static final int BITWISE_OR = 23;
+	public static final int BITWISE_XOR = 24;
+
+	public static final int LOGICAL_AND = 25;
+	public static final int LOGICAL_OR = 26;
+
+	public static final int CONDITION = 27;
+
+	public static final int ASSIGNMENT = 32;
+	public static final int ASSIGNMENT_ADDITION = 33;
+	public static final int ASSIGNMENT_SUBTRACTION = 34;
+	public static final int ASSIGNMENT_MULTIPLICATION = 35;
+	public static final int ASSIGNMENT_DIVISION = 36;
+	public static final int ASSIGNMENT_MOD = 37;
+
+	public static final int ASSIGNMENT_SHIFT_LEFT = 38;
+	public static final int ASSIGNMENT_SHIFT_RIGHT = 39;
+	public static final int ASSIGNMENT_AND = 40;
+	public static final int ASSIGNMENT_OR = 41;
+	public static final int ASSIGNMENT_XOR = 42;
+
+	public static final int COMMA = 43;
 }

@@ -1,14 +1,8 @@
 package me.blog.hgl1002.lboard.expression;
 
-import me.blog.hgl1002.lboard.expression.nodes.BinaryTreeNode;
-import me.blog.hgl1002.lboard.expression.nodes.ConstantTreeNode;
-import me.blog.hgl1002.lboard.expression.nodes.Operator;
-import me.blog.hgl1002.lboard.expression.nodes.TreeNode;
-import me.blog.hgl1002.lboard.expression.nodes.TrinominalTreeNode;
-import me.blog.hgl1002.lboard.expression.nodes.UnaryTreeNode;
-import me.blog.hgl1002.lboard.expression.nodes.VariableTreeNode;
+import me.blog.hgl1002.lboard.expression.nodes.*;
 
-public class StringTreeBuilder implements TreeBuilder {
+public class StringRecursionTreeBuilder implements TreeBuilder {
 
 	@Override
 	public TreeNode build(Object o) {
@@ -145,7 +139,7 @@ public class StringTreeBuilder implements TreeBuilder {
 						TreeNode vTrue = parseCondition();
 						eat(':');
 						TreeNode vFalse = parseCondition();
-						return new TrinominalTreeNode(Operator.CONDITION, x, vTrue, vFalse);
+						return new TernaryTreeNode(Operator.CONDITION, x, vTrue, vFalse);
 					}
 					else return x;
 				}

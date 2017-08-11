@@ -4,7 +4,7 @@ public class UnaryTreeNode extends TreeNode {
 
 	TreeNode center;
 
-	public UnaryTreeNode(Operator operator, TreeNode center) {
+	public UnaryTreeNode(int operator, TreeNode center) {
 		super(operator);
 		this.center = center;
 	}
