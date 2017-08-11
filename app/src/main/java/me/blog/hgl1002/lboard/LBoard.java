@@ -207,36 +207,42 @@ public class LBoard extends InputMethodService {
 		slideDown = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.slide_down);
 		slideUp = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.slide_up);
 
-		DefaultSoftKeyboard softKeyboard = new DefaultSoftKeyboard(this);
-		DefaultHardKeyboard hardKeyboard = new DefaultHardKeyboard(this);
-		UnicodeCharacterGenerator generator = new UnicodeCharacterGenerator();
-		generator.setListener(characterGeneratorListener);
-		generator.setCombinationTable(UnicodeCharacterGenerator.loadCombinationTable(getResources().openRawResource(R.raw.comb_sebeol)));
-		hardKeyboard.setCharacterGenerator(generator);
-		hardKeyboard.setMappings(LHKB1.loadMappings(getResources().openRawResource(R.raw.layout_sebeol_final)));
+		LBoardInputMethod sebeolFinal, qwerty;
 
-		softKeyboard.createKeyboards(this, R.xml.keyboard_full_10cols, R.xml.keyboard_full_10cols, R.xml.keyboard_lower_default);
-		CharSequence[][] labels = new CharSequence[0x100][2];
-		for(int i = 0 ; i < labels.length ; i++) {
-			for(int j = 0 ; j < labels[i].length ; j++) {
-				long mapping = hardKeyboard.getMappings()[i][j];
-				if(mapping != 0) labels[i][j] = new String(new char[] {(char) mapping});
-				else labels[i][j] = null;
+		{
+			DefaultSoftKeyboard softKeyboard = new DefaultSoftKeyboard(this);
+			DefaultHardKeyboard hardKeyboard = new DefaultHardKeyboard(this);
+			UnicodeCharacterGenerator generator = new UnicodeCharacterGenerator();
+			generator.setListener(characterGeneratorListener);
+			generator.setCombinationTable(UnicodeCharacterGenerator.loadCombinationTable(getResources().openRawResource(R.raw.comb_sebeol)));
+			hardKeyboard.setCharacterGenerator(generator);
+			hardKeyboard.setMappings(LHKB1.loadMappings(getResources().openRawResource(R.raw.layout_sebeol_final)));
+
+			softKeyboard.createKeyboards(this, R.xml.keyboard_full_10cols, R.xml.keyboard_full_10cols, R.xml.keyboard_lower_default);
+			CharSequence[][] labels = new CharSequence[0x100][2];
+			for(int i = 0 ; i < labels.length ; i++) {
+				for(int j = 0 ; j < labels[i].length ; j++) {
+					long mapping = hardKeyboard.getMappings()[i][j];
+					if(mapping != 0) labels[i][j] = new String(new char[] {(char) mapping});
+					else labels[i][j] = null;
+				}
 			}
+			softKeyboard.setLabels(labels);
+
+			sebeolFinal = new LBoardInputMethod("Sebeolsik Final", softKeyboard, hardKeyboard, generator);
 		}
-		softKeyboard.setLabels(labels);
 
-		LBoardInputMethod sebeolFinal = new LBoardInputMethod("Sebeolsik Final", softKeyboard, hardKeyboard, generator);
+		{
+			DefaultSoftKeyboard softKeyboard = new DefaultSoftKeyboard(this);
+			DefaultHardKeyboard hardKeyboard = new DefaultHardKeyboard(this);
+			CharacterGenerator generator = new UnicodeCharacterGenerator();
+			generator.setListener(characterGeneratorListener);
+			hardKeyboard.setMappings(LHKB1.loadMappings(getResources().openRawResource(R.raw.layout_qwerty)));
 
-		softKeyboard = new DefaultSoftKeyboard(this);
-		hardKeyboard = new DefaultHardKeyboard(this);
-		generator = new UnicodeCharacterGenerator();
-		generator.setListener(characterGeneratorListener);
-		hardKeyboard.setMappings(LHKB1.loadMappings(getResources().openRawResource(R.raw.layout_qwerty)));
+			softKeyboard.createKeyboards(this, R.xml.keyboard_qwerty_4rows, R.xml.keyboard_qwerty_4rows, R.xml.keyboard_lower_default);
 
-		softKeyboard.createKeyboards(this, R.xml.keyboard_qwerty_4rows, R.xml.keyboard_qwerty_4rows, R.xml.keyboard_lower_default);
-
-		LBoardInputMethod qwerty = new LBoardInputMethod("Qwerty", softKeyboard, hardKeyboard, generator);
+			qwerty = new LBoardInputMethod("Qwerty", softKeyboard, hardKeyboard, generator);
+		}
 
 		inputMethods.add(qwerty);
 		inputMethods.add(sebeolFinal);
