@@ -12,7 +12,6 @@ import java.util.Stack;
 import me.blog.hgl1002.lboard.expression.nodes.*;
 
 import static me.blog.hgl1002.lboard.expression.nodes.TreeNode.*;
-import static me.blog.hgl1002.lboard.expression.nodes.Operator.*;
 
 public class BinaryIterationTreeBuilder implements TreeBuilder {
 
@@ -40,11 +39,11 @@ public class BinaryIterationTreeBuilder implements TreeBuilder {
 			Stack<TreeNode> operands = new Stack<TreeNode>();
 			TreeNode build() {
 				TreeNode current = null;
-				while(true) {
+				while(bb.hasRemaining()) {
 					byte type = bb.get();
 					switch(type) {
 					case 0: {
-						return current;
+						break;
 					}
 					case TYPE_CONSTANT: {
 						long value = bb.getLong();
@@ -106,6 +105,7 @@ public class BinaryIterationTreeBuilder implements TreeBuilder {
 					}
 					}
 				}
+				return current;
 			}
 		}.build();
 	}
