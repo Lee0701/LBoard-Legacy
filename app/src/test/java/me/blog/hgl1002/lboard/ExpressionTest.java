@@ -4,14 +4,9 @@ import org.junit.Test;
 
 import java.util.HashMap;
 
-import me.blog.hgl1002.lboard.expression.BinaryTreeNode;
-import me.blog.hgl1002.lboard.expression.ConstantTreeNode;
-import me.blog.hgl1002.lboard.expression.ListTreeNode;
-import me.blog.hgl1002.lboard.expression.Operator;
 import me.blog.hgl1002.lboard.expression.TreeBuilder;
-import me.blog.hgl1002.lboard.expression.TreeNode;
+import me.blog.hgl1002.lboard.expression.nodes.TreeNode;
 import me.blog.hgl1002.lboard.expression.TreeParser;
-import me.blog.hgl1002.lboard.expression.VariableTreeNode;
 
 public class ExpressionTest {
 

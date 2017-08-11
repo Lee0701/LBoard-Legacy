@@ -1,10 +1,10 @@
-package me.blog.hgl1002.lboard.expression;
+package me.blog.hgl1002.lboard.expression.nodes;
 
-public class VariableTreeNode extends TreeNode {
+public class ConstantRepresentationTreeNode extends TreeNode {
 
 	String name;
 
-	public VariableTreeNode(String name) {
+	public ConstantRepresentationTreeNode(String name) {
 		super(Operator.NONE);
 		this.name = name;
 	}
@@ -16,5 +16,4 @@ public class VariableTreeNode extends TreeNode {
 	public void setName(String name) {
 		this.name = name;
 	}
-
 }
