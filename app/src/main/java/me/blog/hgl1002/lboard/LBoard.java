@@ -417,9 +417,8 @@ public class LBoard extends InputMethodService {
 							updateInput();
 							updateCandidates();
 						} else if(sentence.size() > 0) {
-							Word word = sentence.pop();
-							this.composingWord = word.getCandidate();
-							this.composingWordStroke = word.getStroke();
+							sentence.pop();
+							clearComposing();
 							updateInput();
 							updateCandidates();
 						} else {
