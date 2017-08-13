@@ -158,7 +158,7 @@ public class LBoard extends InputMethodService {
 	};
 
 	protected CharacterGenerator.CharacterGeneratorListener characterGeneratorListener
-			 = new CharacterGenerator.CharacterGeneratorListener() {
+			= new CharacterGenerator.CharacterGeneratorListener() {
 		@Override
 		public void onCompose(CharacterGenerator source, String composing) {
 			InputConnection ic = getCurrentInputConnection();
@@ -189,7 +189,7 @@ public class LBoard extends InputMethodService {
 	};
 
 	protected CandidatesViewManager.CandidatesViewListener candidatesViewListener
-			 = new CandidatesViewManager.CandidatesViewListener() {
+			= new CandidatesViewManager.CandidatesViewListener() {
 		@Override
 		public void onSelect(Object candidate) {
 			if(candidate instanceof Word) {
@@ -404,9 +404,16 @@ public class LBoard extends InputMethodService {
 //				} else {
 //					manager.switchToNextInputMethod(token, false);
 //				}
+				commitComposingChar();
+				if(!composingWord.isEmpty()) appendWord(composingWord, composingWordStroke, Word.ATTRIBUTE_SPACED);
+
 				if(++currentInputMethodId >= 2) currentInputMethodId = 0;
 				currentInputMethod = inputMethods.get(currentInputMethodId);
 				updateInputView();
+
+				updateInput();
+				start = true;
+				updatePrediction();
 			}
 			return true;
 		case KeyEvent.KEYCODE_DEL:
