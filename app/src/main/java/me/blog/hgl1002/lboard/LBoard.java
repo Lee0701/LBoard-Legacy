@@ -405,7 +405,10 @@ public class LBoard extends InputMethodService {
 //					manager.switchToNextInputMethod(token, false);
 //				}
 				commitComposingChar();
-				if(!composingWord.isEmpty()) appendWord(composingWord, composingWordStroke, Word.ATTRIBUTE_SPACED);
+				if(!composingWord.isEmpty()) {
+					appendWord(composingWord, composingWordStroke, Word.ATTRIBUTE_SPACED);
+					clearComposing();
+				}
 
 				if(++currentInputMethodId >= 2) currentInputMethodId = 0;
 				currentInputMethod = inputMethods.get(currentInputMethodId);
@@ -499,7 +502,8 @@ public class LBoard extends InputMethodService {
 				commitComposingChar();
 				if(!composingWord.isEmpty()) appendWord(composingWord, composingWordStroke);
 				clearComposing();
-				commitSentence(sentence, true);
+				boolean learn = !isPasswordField();
+				commitSentence(sentence, learn);
 				startNewSentence(sentence);
 				updateInput();
 				updatePrediction();
@@ -842,4 +846,17 @@ public class LBoard extends InputMethodService {
 		return permissionCheck == PackageManager.PERMISSION_GRANTED;
 	}
 
+	public boolean isPasswordField() {
+		EditorInfo info = getCurrentInputEditorInfo();
+		switch (info.inputType & EditorInfo.TYPE_MASK_CLASS) {
+		case EditorInfo.TYPE_CLASS_TEXT:
+			switch (info.inputType & EditorInfo.TYPE_MASK_VARIATION) {
+			case EditorInfo.TYPE_TEXT_VARIATION_PASSWORD:
+			case EditorInfo.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD:
+			case EditorInfo.TYPE_TEXT_VARIATION_WEB_PASSWORD:
+				return true;
+			}
+		}
+		return false;
+	}
 }
