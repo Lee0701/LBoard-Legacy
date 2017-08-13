@@ -667,8 +667,10 @@ public class LBoard extends InputMethodService {
 	public void commitComposingChar() {
 		this.composingWord += composingChar;
 		this.composingChar = "";
-		if(composingWordStrokeHistory.isEmpty() || composingWordStrokeHistory.peek() != composingWordStroke)
+		if(composingWordStrokeHistory.isEmpty() || !composingWordStrokeHistory.peek().equals(composingWordStroke)) {
 			composingWordStrokeHistory.push(composingWordStroke);
+		}
+
 		this.composingWordStroke += composingCharStroke;
 		this.composingCharStroke = "";
 	}
