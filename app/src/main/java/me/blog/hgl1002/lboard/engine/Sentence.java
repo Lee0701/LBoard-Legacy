@@ -6,9 +6,13 @@ import java.util.List;
 
 public class Sentence extends  Word {
 
-	List<Word> words;
+	public static final String DEFAULT_HALF_SPACE = " ";
 
-	Sentence prev;
+	protected List<Word> words;
+
+	protected Sentence prev;
+
+	protected String space;
 
 	public Sentence(Sentence prev, String input, List<Word> words) {
 		this(input, words);
@@ -34,6 +38,7 @@ public class Sentence extends  Word {
 				this.stroke = input;
 			}
 		}
+		this.space = DEFAULT_HALF_SPACE;
 	}
 
 	public void append(Word word) {
@@ -83,9 +88,11 @@ public class Sentence extends  Word {
 	public String getCandidate() {
 		StringBuffer candidate = new StringBuffer();
 		for(Word word : words) {
-			candidate.append(word.getCandidate() + " ");
+			candidate.append(word.getCandidate());
+			if((word.getAttribute() & Word.ATTRIBUTE_SPACED) != 0) {
+				candidate.append(space);
+			}
 		}
-		if(candidate.length() > 0) candidate.deleteCharAt(candidate.length() - 1);
 		this.candidate = candidate.toString();
 		return this.candidate;
 	}
@@ -94,10 +101,20 @@ public class Sentence extends  Word {
 	public String getStroke() {
 		StringBuffer stroke = new StringBuffer();
 		for(Word word : words) {
-			stroke.append(word.getStroke() + " ");
+			stroke.append(word.getStroke());
+			if((word.getAttribute() & Word.ATTRIBUTE_SPACED) != 0) {
+				stroke.append(space);
+			}
 		}
-		if(stroke.length() > 0) stroke.deleteCharAt(stroke.length() - 1);
 		this.stroke = stroke.toString();
 		return this.stroke;
+	}
+
+	public String getSpace() {
+		return space;
+	}
+
+	public void setSpace(String space) {
+		this.space = space;
 	}
 }

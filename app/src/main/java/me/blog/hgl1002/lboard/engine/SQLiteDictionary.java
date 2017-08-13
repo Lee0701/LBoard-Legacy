@@ -83,7 +83,7 @@ public class SQLiteDictionary implements LBoardDictionary {
 			String stroke = cursor.getString(cursor.getColumnIndex(COLUMN_NAME_STROKE));
 			int frequency = cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_FREQUENCY));
 			int attribute = cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_ATTRIBUTE));
-			Word word = new Word(candidate, stroke, frequency);
+			Word word = new Word(candidate, stroke, frequency, attribute);
 			words.add(word);
 		}
 		Word[] result = new Word[words.size()];
@@ -157,6 +157,7 @@ public class SQLiteDictionary implements LBoardDictionary {
 		String stroke = word.getStroke();
 		int frequency = word.getFrequency();
 		if(frequency == 0) frequency = 1;
+		int attribute = word.getAttribute();
 
 		String sql = "select * from " + TABLE_NAME_DIC
 				+ " where " + COLUMN_NAME_STROKE + "=?"
@@ -171,7 +172,8 @@ public class SQLiteDictionary implements LBoardDictionary {
 			int freq = cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_FREQUENCY));
 			cursor.close();
 			sql = "update " + TABLE_NAME_DIC
-					+ " set " + COLUMN_NAME_FREQUENCY + "=?"
+					+ " set " + COLUMN_NAME_FREQUENCY + "=?, "
+					+ COLUMN_NAME_ATTRIBUTE + "=?"
 					+ " where " + COLUMN_NAME_STROKE + "=?"
 					+ " and " + COLUMN_NAME_CANDIDATE + "=?";
 			args = new String[] {
@@ -185,11 +187,13 @@ public class SQLiteDictionary implements LBoardDictionary {
 		sql = "insert into " + TABLE_NAME_DIC + " ("
 				+ COLUMN_NAME_STROKE + ", "
 				+ COLUMN_NAME_CANDIDATE + ", "
-				+ COLUMN_NAME_FREQUENCY + ") values(?, ?, ?)";
+				+ COLUMN_NAME_FREQUENCY + ", "
+				+ COLUMN_NAME_ATTRIBUTE + ") values(?, ?, ?, ?)";
 		args = new String[] {
 				stroke,
 				candidate,
-				String.valueOf(frequency)
+				String.valueOf(frequency),
+				String.valueOf(attribute)
 		};
 		dbDictionary.execSQL(sql, args);
 		return 1;
@@ -201,6 +205,7 @@ public class SQLiteDictionary implements LBoardDictionary {
 		deleteUnusedChains(previous);
 
 		String candidate = chain.get(chain.size()-1).getCandidate();
+		int attribute = chain.get(chain.size()-1).getAttribute();
 		String sql;
 
 		sql = "select * from " + TABLE_NAME_CHAINS + " where " + COLUMN_NAME_PREVIOUS + "=? and " + COLUMN_NAME_CANDIDATE + "=?";
@@ -229,11 +234,13 @@ public class SQLiteDictionary implements LBoardDictionary {
 		sql = "insert into " + TABLE_NAME_CHAINS + " ("
 				+ COLUMN_NAME_PREVIOUS + ", "
 				+ COLUMN_NAME_CANDIDATE + ", "
-				+ COLUMN_NAME_FREQUENCY + ") values(?, ?, ?)";
+				+ COLUMN_NAME_FREQUENCY + ", "
+				+ COLUMN_NAME_ATTRIBUTE + ") values(?, ?, ?, ?)";
 		args = new String[] {
 				previous,
 				candidate,
-				"1"
+				"1",
+				String.valueOf(attribute)
 		};
 		dbDictionary.execSQL(sql, args);
 		return 1;

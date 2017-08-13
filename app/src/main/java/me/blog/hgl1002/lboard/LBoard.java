@@ -192,6 +192,7 @@ public class LBoard extends InputMethodService {
 		@Override
 		public void onSelect(Object candidate) {
 			if(candidate instanceof Word) {
+				commitComposingChar();
 				clearComposing();
 				appendWord((Word) candidate);
 				updateInput();
@@ -409,7 +410,7 @@ public class LBoard extends InputMethodService {
 						}
 						searchViewManager.setText(searchText + searchTextComposing);
 					} else {
-						if(composingWord.length() > 0) {
+						if(!composingWord.isEmpty()) {
 							composingWord = composingWord.substring(0, composingWord.length()-1);
 							if(composingWordStrokeHistory.isEmpty()) {
 								composingWordStroke = "";
@@ -419,7 +420,12 @@ public class LBoard extends InputMethodService {
 							updateInput();
 							updateCandidates();
 						} else if(sentence.size() > 0) {
-							sentence.pop();
+							Word last = sentence.getLast();
+							if((last.getAttribute() & Sentence.ATTRIBUTE_SPACED) != 0) {
+								last.setAttribute(last.getAttribute() & ~Sentence.ATTRIBUTE_SPACED);
+							} else {
+								sentence.pop();
+							}
 							clearComposing();
 							updateInput();
 							updateCandidates();
@@ -460,7 +466,14 @@ public class LBoard extends InputMethodService {
 			switch (event.getKeyCode()) {
 			case KeyEvent.KEYCODE_SPACE:
 				commitComposingChar();
-				appendWord(composingWord, composingWordStroke);
+				if(composingWord.isEmpty() && sentence.size() > 0) {
+					Word last = sentence.getLast();
+					if((last.getAttribute() & Sentence.ATTRIBUTE_SPACED) == 0) {
+						last.setAttribute(last.getAttribute() | Sentence.ATTRIBUTE_SPACED);
+					}
+				} else if(!composingWord.isEmpty()) {
+					appendWord(composingWord, composingWordStroke, Sentence.ATTRIBUTE_SPACED);
+				}
 				clearComposing();
 				updateInput();
 				updatePrediction();
@@ -607,10 +620,11 @@ public class LBoard extends InputMethodService {
 				default:
 					if(sentenceStops.contains(text)) {
 						commitComposingChar();
-						composingWordStrokeHistory.push(composingWordStroke);
+						appendWord(composingWord, composingWordStroke, 0);
+						clearComposing();
 						composingWord += text;
 						composingWordStroke += text;
-						appendWord(composingWord, composingWordStroke);
+						appendWord(composingWord, composingWordStroke, 0);
 						clearComposing();
 						updateInput();
 						start = true;
@@ -644,8 +658,12 @@ public class LBoard extends InputMethodService {
 		this.composingCharStroke = "";
 	}
 
-	public void appendWord(String composingWord, String ComposingWordStroke) {
-		Word word = new Word(composingWord, composingWordStroke, 1);
+	public void appendWord(String composingWord, String composingWordStroke) {
+		this.appendWord(composingWord, composingWordStroke, 0);
+	}
+
+	public void appendWord(String composingWord, String composingWordStroke, int attribute) {
+		Word word = new Word(composingWord, composingWordStroke, 1, attribute);
 		this.appendWord(word);
 	}
 
@@ -662,7 +680,6 @@ public class LBoard extends InputMethodService {
 		InputConnection ic = getCurrentInputConnection();
 		SpannableStringBuilder str = new SpannableStringBuilder();
 		str.append(sentence.getCandidate());
-		if(str.length() > 0) str.append(" ");
 		int start = 0, end = str.length();
 		str.setSpan(SPAN_COMPOSING_SENTENCE, start, end, Spanned.SPAN_COMPOSING);
 		str.append(composingWord);
