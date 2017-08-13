@@ -1,5 +1,7 @@
 package me.blog.hgl1002.lboard.ime.charactergenerator;
 
+import java.util.Map;
+
 import me.blog.hgl1002.lboard.engine.StringSegment;
 
 /**
@@ -30,7 +32,15 @@ public interface CharacterGenerator {
 	 */
 	public void resetComposing();
 
+	/**
+	 * 현재 조합 중인 글자의 낱자를 표준 한글 자모로 출력한다.
+	 */
 	public String getStroke();
+
+	/**
+	 * 상태 변수를 처리해서 돌려준다.
+	 */
+	public Map<String, Long> getVariables();
 
 	public void setListener(CharacterGeneratorListener listener);
 	public void removeListener();

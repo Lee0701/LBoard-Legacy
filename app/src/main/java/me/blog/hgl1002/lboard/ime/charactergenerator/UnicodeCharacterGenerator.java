@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.EmptyStackException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Stack;
 
 public class UnicodeCharacterGenerator implements CharacterGenerator {
@@ -470,6 +472,25 @@ public class UnicodeCharacterGenerator implements CharacterGenerator {
 	 */
 	public boolean isJong(int code) {
 		return code >= 0x11a8 && code <= 0x11ff;
+	}
+
+	@Override
+	public Map<String, Long> getVariables() {
+		Map<String, Long> result = new HashMap<>();
+		result.put("A", 0L);
+		result.put("B", 0L);
+		result.put("C", 0L);
+		if(isCho(last)) result.put("A", (long) last);
+		if(isJung(last)) result.put("B", (long) last);
+		if(isJong(last)) result.put("C", (long) last);
+		long cho = (this.cho == -1) ? 0 : (long) this.cho + 0x1100;
+		long jung = (this.jung == -1) ? 0 : (long) this.jung + 0x1161;
+		long jong = (this.jong == -1) ? 0 : (long) this.jong + 0x11a7;
+		result.put("D", cho);
+		result.put("E", jung);
+		result.put("F", jong);
+
+		return null;
 	}
 
 	@Override
