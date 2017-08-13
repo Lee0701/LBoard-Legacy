@@ -5,6 +5,8 @@ import me.blog.hgl1002.lboard.ime.charactergenerator.CharacterGenerator;
 public class LBoardInputMethod {
 	String name;
 
+	String dictionaryName;
+
 	protected SoftKeyboard softKeyboard;
 	protected HardKeyboard hardKeyboard;
 	protected CharacterGenerator characterGenerator;
@@ -23,6 +25,14 @@ public class LBoardInputMethod {
 
 	public void setName(String name) {
 		this.name = name;
+	}
+
+	public String getDictionaryName() {
+		return dictionaryName;
+	}
+
+	public void setDictionaryName(String dictionaryName) {
+		this.dictionaryName = dictionaryName;
 	}
 
 	public SoftKeyboard getSoftKeyboard() {

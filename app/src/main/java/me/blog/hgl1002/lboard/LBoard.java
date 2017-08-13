@@ -98,7 +98,6 @@ public class LBoard extends InputMethodService {
 	protected SearchViewManager searchViewManager;
 
 	protected DictionaryManager dictionaryManager;
-	protected String currentDictionaryName;
 
 	protected CandidatesViewManager candidatesViewManager;
 
@@ -234,6 +233,7 @@ public class LBoard extends InputMethodService {
 		softKeyboard.setLabels(labels);
 
 		LBoardInputMethod sebeolFinal = new LBoardInputMethod("Sebeolsik Final", softKeyboard, hardKeyboard, generator);
+		sebeolFinal.setDictionaryName(DICTIONARY_KO);
 
 		softKeyboard = new DefaultSoftKeyboard(this);
 		hardKeyboard = new DefaultHardKeyboard(this);
@@ -244,6 +244,7 @@ public class LBoard extends InputMethodService {
 		softKeyboard.createKeyboards(this, R.xml.keyboard_qwerty_4rows, R.xml.keyboard_qwerty_4rows, R.xml.keyboard_lower_default);
 
 		LBoardInputMethod qwerty = new LBoardInputMethod("Qwerty", softKeyboard, hardKeyboard, generator);
+		qwerty.setDictionaryName(DICTIONARY_EN);
 
 		inputMethods.add(qwerty);
 		inputMethods.add(sebeolFinal);
@@ -254,9 +255,10 @@ public class LBoard extends InputMethodService {
 		searchViewManager = new DefaultSearchViewManager(this, engine);
 
 		dictionaryManager = new DictionaryManager();
-		currentDictionaryName = DICTIONARY_KO;
 		LBoardDictionary dictionary = new SQLiteDictionary(getFilesDir() + "/dictionary.dic");
-		dictionaryManager.addDictionary(currentDictionaryName, dictionary);
+		dictionaryManager.addDictionary(DICTIONARY_KO, dictionary);
+		LBoardDictionary english = new SQLiteDictionary(getFilesDir() + "/english.dic");
+		dictionaryManager.addDictionary(DICTIONARY_EN, english);
 		dictionaryManager.addListener(dictionaryListener);
 		candidatesViewManager = new TextCandidatesViewManager();
 		candidatesViewManager.setListener(candidatesViewListener);
@@ -310,14 +312,14 @@ public class LBoard extends InputMethodService {
 		if(start) {
 			Word[] start = new Word[] {WordChain.START, WordChain.START, WordChain.START};
 			dictionaryManager.searchNextWord(
-					currentDictionaryName,
+					currentInputMethod.getDictionaryName(),
 					LBoardDictionary.SEARCH_CHAIN,
 					LBoardDictionary.ORDER_BY_FREQUENCY,
 					composingWord,
 					new Word[][] {start, chain.getAll()});
 		} else {
 			dictionaryManager.searchNextWord(
-					currentDictionaryName,
+					currentInputMethod.getDictionaryName(),
 					LBoardDictionary.SEARCH_CHAIN,
 					LBoardDictionary.ORDER_BY_FREQUENCY,
 					composingWord,
@@ -328,7 +330,7 @@ public class LBoard extends InputMethodService {
 	public void updateCandidates() {
 		String stroke = composingWordStroke + composingCharStroke;
 		dictionaryManager.searchCurrentWord(
-				currentDictionaryName,
+				currentInputMethod.getDictionaryName(),
 				LBoardDictionary.SEARCH_PREFIX,
 				LBoardDictionary.ORDER_BY_FREQUENCY,
 				stroke);
@@ -697,7 +699,7 @@ public class LBoard extends InputMethodService {
 	}
 
 	public void learnWord(Word word) {
-		LBoardDictionary current = dictionaryManager.getDictionary(currentDictionaryName);
+		LBoardDictionary current = dictionaryManager.getDictionary(currentInputMethod.getDictionaryName());
 		if(current instanceof SQLiteDictionary && word.getCandidate() != "") {
 			SQLiteDictionary dictionary = (SQLiteDictionary) current;
 			dictionary.learnWord(word);
@@ -705,7 +707,7 @@ public class LBoard extends InputMethodService {
 	}
 
 	public void learnWordChain(WordChain prev) {
-		LBoardDictionary current = dictionaryManager.getDictionary(currentDictionaryName);
+		LBoardDictionary current = dictionaryManager.getDictionary(currentInputMethod.getDictionaryName());
 		if(current instanceof SQLiteDictionary) {
 			SQLiteDictionary dictionary = (SQLiteDictionary) current;
 			dictionary.learnChain(prev);
