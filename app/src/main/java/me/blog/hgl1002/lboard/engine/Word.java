@@ -2,6 +2,8 @@ package me.blog.hgl1002.lboard.engine;
 
 public class Word {
 
+	public static final int ATTRIBUTE_SPACED = 0x01;
+
 	String candidate;
 	String stroke;
 	int frequency;

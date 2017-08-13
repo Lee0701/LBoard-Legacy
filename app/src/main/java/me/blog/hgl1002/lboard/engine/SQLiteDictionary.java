@@ -18,6 +18,7 @@ public class SQLiteDictionary implements LBoardDictionary {
 	protected static final String COLUMN_NAME_CANDIDATE = "candidate";
 	protected static final String COLUMN_NAME_PREVIOUS = "previous";
 	protected static final String COLUMN_NAME_FREQUENCY = "frequency";
+	protected static final String COLUMN_NAME_ATTRIBUTE = "attribute";
 
 	public static final int CHAIN_DELETION_THRESHOLD = 20;
 	public static final int CHAIN_DELETION_UNIT = 2;
@@ -42,7 +43,8 @@ public class SQLiteDictionary implements LBoardDictionary {
 				+ "(" + COLUMN_NAME_ID + " integer primary key autoincrement, "
 				+ COLUMN_NAME_STROKE + " text, "
 				+ COLUMN_NAME_CANDIDATE + " text, "
-				+ COLUMN_NAME_FREQUENCY + " integer)";
+				+ COLUMN_NAME_FREQUENCY + " integer, "
+				+ COLUMN_NAME_ATTRIBUTE + ")";
 		if(dbDictionary != null) {
 			dbDictionary.execSQL(sql);
 		}
@@ -52,7 +54,8 @@ public class SQLiteDictionary implements LBoardDictionary {
 		String sql = "create table if not exists " + name + " "
 				+ "(" + COLUMN_NAME_PREVIOUS + " text, "
 				+ COLUMN_NAME_CANDIDATE + " text, "
-				+ COLUMN_NAME_FREQUENCY + " integer)";
+				+ COLUMN_NAME_FREQUENCY + " integer, "
+				+ COLUMN_NAME_ATTRIBUTE + ")";
 		if(dbDictionary != null) {
 			dbDictionary.execSQL(sql);
 		}
@@ -79,6 +82,7 @@ public class SQLiteDictionary implements LBoardDictionary {
 			String candidate = cursor.getString(cursor.getColumnIndex(COLUMN_NAME_CANDIDATE));
 			String stroke = cursor.getString(cursor.getColumnIndex(COLUMN_NAME_STROKE));
 			int frequency = cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_FREQUENCY));
+			int attribute = cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_ATTRIBUTE));
 			Word word = new Word(candidate, stroke, frequency);
 			words.add(word);
 		}
@@ -109,9 +113,10 @@ public class SQLiteDictionary implements LBoardDictionary {
 		while(cursor.moveToNext()) {
 			String candidate = cursor.getString(cursor.getColumnIndex(COLUMN_NAME_CANDIDATE));
 			int frequency = cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_FREQUENCY));
+			int attribute = cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_ATTRIBUTE));
 			if(candidate.equals("END")) {
 			} else {
-				list.add(new Word(candidate, null, frequency));
+				list.add(new Word(candidate, null, frequency, attribute));
 				candidates.add(candidate);
 			}
 		}
@@ -127,9 +132,10 @@ public class SQLiteDictionary implements LBoardDictionary {
 		while(cursor.moveToNext()) {
 			String candidate = cursor.getString(cursor.getColumnIndex(COLUMN_NAME_CANDIDATE));
 			int frequency = cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_FREQUENCY));
+			int attribute = cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_ATTRIBUTE));
 			if(candidate.equals("END")) {
 			} else {
-				if(!candidates.contains(candidate)) list.add(new Word(candidate, null, frequency));
+				if(!candidates.contains(candidate)) list.add(new Word(candidate, null, frequency, attribute));
 			}
 		}
 		cursor.close();
