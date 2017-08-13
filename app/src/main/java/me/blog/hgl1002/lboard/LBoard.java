@@ -317,7 +317,7 @@ public class LBoard extends InputMethodService {
 					LBoardDictionary.SEARCH_CHAIN,
 					LBoardDictionary.ORDER_BY_FREQUENCY,
 					composingWord,
-					new Word[][] {start, chain.getAll()});
+					new Word[][] {chain.getAll(), start});
 		} else {
 			dictionaryManager.searchNextWord(
 					currentInputMethod.getDictionaryName(),
