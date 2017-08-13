@@ -263,9 +263,9 @@ public class LBoard extends InputMethodService {
 		searchViewManager = new DefaultSearchViewManager(this, engine);
 
 		dictionaryManager = new DictionaryManager();
-		LBoardDictionary dictionary = new SQLiteDictionary(getFilesDir() + "/dictionary.dic");
+		LBoardDictionary dictionary = new SQLiteDictionary(getFilesDir() + "/" + DICTIONARY_KO + ".dic");
 		dictionaryManager.addDictionary(DICTIONARY_KO, dictionary);
-		LBoardDictionary english = new SQLiteDictionary(getFilesDir() + "/english.dic");
+		LBoardDictionary english = new SQLiteDictionary(getFilesDir() + "/" + DICTIONARY_EN + ".dic");
 		dictionaryManager.addDictionary(DICTIONARY_EN, english);
 		dictionaryManager.addListener(dictionaryListener);
 		candidatesViewManager = new TextCandidatesViewManager();
@@ -517,7 +517,7 @@ public class LBoard extends InputMethodService {
 
 	public void shareDictionary() {
 		try {
-			FileInputStream fis = new FileInputStream(new File(getFilesDir(), "dictionary.dic"));
+			FileInputStream fis = new FileInputStream(new File(getFilesDir(), DICTIONARY_KO + ".dic"));
 			File file = new File("/storage/emulated/0/dictionary.dic");
 			FileOutputStream fos = new FileOutputStream(file);
 			byte[] data = new byte[fis.available()];
