@@ -309,8 +309,9 @@ public class LBoard extends InputMethodService {
 		return this.mainInputView;
 	}
 
-	public void updatePrediction() {WordChain chain = getWordChain(sentence, 0);
-		if(start) {
+	public void updatePrediction() {
+		WordChain chain = getWordChain(sentence, 0);
+		if(start && chain.get(chain.size()-1) != WordChain.START) {
 			Word[] start = new Word[] {WordChain.START, WordChain.START, WordChain.START};
 			dictionaryManager.searchNextWord(
 					currentInputMethod.getDictionaryName(),
@@ -353,7 +354,7 @@ public class LBoard extends InputMethodService {
 		super.onStartInputView(info, restarting);
 		if(restarting) {
 			commitComposingChar();
-			if(!composingWord.isEmpty()) appendWord(composingWord, composingWordStroke);
+			if(!composingWord.isEmpty()) appendWord(composingWord, composingWordStroke, Word.ATTRIBUTE_SPACED);
 			clearComposing();
 			commitSentence(sentence, true, true);
 			startNewSentence(sentence);
