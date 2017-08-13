@@ -48,6 +48,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import me.blog.hgl1002.lboard.cand.CandidatesViewManager;
 import me.blog.hgl1002.lboard.cand.TextCandidatesViewManager;
+import me.blog.hgl1002.lboard.engine.DictionaryManager;
 import me.blog.hgl1002.lboard.engine.LBoardDictionary;
 import me.blog.hgl1002.lboard.engine.SQLiteDictionary;
 import me.blog.hgl1002.lboard.engine.Sentence;
@@ -68,6 +69,9 @@ import me.blog.hgl1002.lboard.search.data.UrlStringData;
 import me.blog.hgl1002.lboard.search.engines.GoogleWebSearchEngine;
 
 public class LBoard extends InputMethodService {
+
+	public static final String DICTIONARY_KO = "ko";
+	public static final String DICTIONARY_EN = "en";
 
 	public static final int MSG_UPDATE_CANDIDATES = 1;
 	public static final int MSG_UPDATE_PREDICTION = 2;
@@ -93,7 +97,7 @@ public class LBoard extends InputMethodService {
 
 	protected SearchViewManager searchViewManager;
 
-	protected LBoardDictionary dictionary;
+	protected DictionaryManager dictionaryManager;
 
 	protected CandidatesViewManager candidatesViewManager;
 
@@ -126,26 +130,29 @@ public class LBoard extends InputMethodService {
 			Word[] candidates;
 			switch (msg.what) {
 			case MSG_UPDATE_PREDICTION:
-				WordChain chain = getWordChain(sentence, 0);
-				candidates = dictionary.searchNextWord(LBoardDictionary.SEARCH_CHAIN, LBoardDictionary.ORDER_BY_FREQUENCY, composingWord, chain.getAll());
-				if(start) {
-					Word[] start = new Word[] {WordChain.START, WordChain.START, WordChain.START};
-					List<Word> list = new ArrayList<>();
-					list.addAll(Arrays.asList(candidates));
-					list.addAll(Arrays.asList(
-							dictionary.searchNextWord(LBoardDictionary.SEARCH_CHAIN, LBoardDictionary.ORDER_BY_FREQUENCY, composingWord, start)));
-					candidates = new Word[list.size()];
-					candidates = list.toArray(candidates);
-				}
-				candidatesViewManager.setCandidates(candidates);
+				candidatesViewManager.setCandidates((Word[]) msg.obj);
 				break;
 
 			case MSG_UPDATE_CANDIDATES:
-				String stroke = composingWordStroke + composingCharStroke;
-				candidates = dictionary.searchCurrentWord(LBoardDictionary.SEARCH_PREFIX, LBoardDictionary.ORDER_BY_FREQUENCY, stroke);
-				candidatesViewManager.setCandidates(candidates);
+				candidatesViewManager.setCandidates((Word[]) msg.obj);
 				break;
 			}
+		}
+	};
+
+	protected DictionaryManager.DictionaryListener dictionaryListener = new DictionaryManager.DictionaryListener() {
+		@Override
+		public void onNextWord(String dictionaryName, Word[] words) {
+			Message msg = handler.obtainMessage(MSG_UPDATE_PREDICTION);
+			msg.obj = words;
+			handler.sendMessageDelayed(msg, DELAY_DISPLAY_CANDIDATES);
+		}
+
+		@Override
+		public void onCurrentWord(String dictionaryName, Word[] words) {
+			Message msg = handler.obtainMessage(MSG_UPDATE_CANDIDATES);
+			msg.obj = words;
+			handler.sendMessageDelayed(msg, DELAY_DISPLAY_CANDIDATES);
 		}
 	};
 
@@ -185,6 +192,7 @@ public class LBoard extends InputMethodService {
 		@Override
 		public void onSelect(Object candidate) {
 			if(candidate instanceof Word) {
+				commitComposingChar();
 				clearComposing();
 				appendWord((Word) candidate);
 				updateInput();
@@ -226,6 +234,7 @@ public class LBoard extends InputMethodService {
 		softKeyboard.setLabels(labels);
 
 		LBoardInputMethod sebeolFinal = new LBoardInputMethod("Sebeolsik Final", softKeyboard, hardKeyboard, generator);
+		sebeolFinal.setDictionaryName(DICTIONARY_KO);
 
 		softKeyboard = new DefaultSoftKeyboard(this);
 		hardKeyboard = new DefaultHardKeyboard(this);
@@ -236,6 +245,7 @@ public class LBoard extends InputMethodService {
 		softKeyboard.createKeyboards(this, R.xml.keyboard_qwerty_4rows, R.xml.keyboard_qwerty_4rows, R.xml.keyboard_lower_default);
 
 		LBoardInputMethod qwerty = new LBoardInputMethod("Qwerty", softKeyboard, hardKeyboard, generator);
+		qwerty.setDictionaryName(DICTIONARY_EN);
 
 		inputMethods.add(qwerty);
 		inputMethods.add(sebeolFinal);
@@ -245,8 +255,12 @@ public class LBoard extends InputMethodService {
 		SearchEngine engine = new GoogleWebSearchEngine();
 		searchViewManager = new DefaultSearchViewManager(this, engine);
 
-		dictionary = new SQLiteDictionary(getFilesDir() + "/dictionary.dic");
-
+		dictionaryManager = new DictionaryManager();
+		LBoardDictionary dictionary = new SQLiteDictionary(getFilesDir() + "/dictionary.dic");
+		dictionaryManager.addDictionary(DICTIONARY_KO, dictionary);
+		LBoardDictionary english = new SQLiteDictionary(getFilesDir() + "/english.dic");
+		dictionaryManager.addDictionary(DICTIONARY_EN, english);
+		dictionaryManager.addListener(dictionaryListener);
 		candidatesViewManager = new TextCandidatesViewManager();
 		candidatesViewManager.setListener(candidatesViewListener);
 
@@ -296,11 +310,32 @@ public class LBoard extends InputMethodService {
 	}
 
 	public void updatePrediction() {
-		handler.sendMessageDelayed(handler.obtainMessage(MSG_UPDATE_PREDICTION), DELAY_DISPLAY_CANDIDATES);
+		WordChain chain = getWordChain(sentence, 0);
+		if(start && chain.get(chain.size()-1) != WordChain.START) {
+			Word[] start = new Word[] {WordChain.START, WordChain.START, WordChain.START};
+			dictionaryManager.searchNextWord(
+					currentInputMethod.getDictionaryName(),
+					LBoardDictionary.SEARCH_CHAIN,
+					LBoardDictionary.ORDER_BY_FREQUENCY,
+					composingWord,
+					new Word[][] {chain.getAll(), start});
+		} else {
+			dictionaryManager.searchNextWord(
+					currentInputMethod.getDictionaryName(),
+					LBoardDictionary.SEARCH_CHAIN,
+					LBoardDictionary.ORDER_BY_FREQUENCY,
+					composingWord,
+					chain.getAll());
+		}
 	}
 
 	public void updateCandidates() {
-		handler.sendMessageDelayed(handler.obtainMessage(MSG_UPDATE_CANDIDATES), DELAY_DISPLAY_CANDIDATES);
+		String stroke = composingWordStroke + composingCharStroke;
+		dictionaryManager.searchCurrentWord(
+				currentInputMethod.getDictionaryName(),
+				LBoardDictionary.SEARCH_PREFIX,
+				LBoardDictionary.ORDER_BY_FREQUENCY,
+				stroke);
 	}
 
 	public void updateInput() {
@@ -319,7 +354,7 @@ public class LBoard extends InputMethodService {
 		super.onStartInputView(info, restarting);
 		if(restarting) {
 			commitComposingChar();
-			if(!composingWord.isEmpty()) appendWord(composingWord, composingWordStroke);
+			if(!composingWord.isEmpty()) appendWord(composingWord, composingWordStroke, Word.ATTRIBUTE_SPACED);
 			clearComposing();
 			commitSentence(sentence, true, true);
 			startNewSentence(sentence);
@@ -376,7 +411,7 @@ public class LBoard extends InputMethodService {
 						}
 						searchViewManager.setText(searchText + searchTextComposing);
 					} else {
-						if(composingWord.length() > 0) {
+						if(!composingWord.isEmpty()) {
 							composingWord = composingWord.substring(0, composingWord.length()-1);
 							if(composingWordStrokeHistory.isEmpty()) {
 								composingWordStroke = "";
@@ -386,9 +421,13 @@ public class LBoard extends InputMethodService {
 							updateInput();
 							updateCandidates();
 						} else if(sentence.size() > 0) {
-							Word word = sentence.pop();
-							this.composingWord = word.getCandidate();
-							this.composingWordStroke = word.getStroke();
+							Word last = sentence.getLast();
+							if((last.getAttribute() & Sentence.ATTRIBUTE_SPACED) != 0) {
+								last.setAttribute(last.getAttribute() & ~Sentence.ATTRIBUTE_SPACED);
+							} else {
+								sentence.pop();
+							}
+							clearComposing();
 							updateInput();
 							updateCandidates();
 						} else {
@@ -428,7 +467,14 @@ public class LBoard extends InputMethodService {
 			switch (event.getKeyCode()) {
 			case KeyEvent.KEYCODE_SPACE:
 				commitComposingChar();
-				appendWord(composingWord, composingWordStroke);
+				if(composingWord.isEmpty() && sentence.size() > 0) {
+					Word last = sentence.getLast();
+					if((last.getAttribute() & Sentence.ATTRIBUTE_SPACED) == 0) {
+						last.setAttribute(last.getAttribute() | Sentence.ATTRIBUTE_SPACED);
+					}
+				} else if(!composingWord.isEmpty()) {
+					appendWord(composingWord, composingWordStroke, Sentence.ATTRIBUTE_SPACED);
+				}
 				clearComposing();
 				updateInput();
 				updatePrediction();
@@ -575,10 +621,11 @@ public class LBoard extends InputMethodService {
 				default:
 					if(sentenceStops.contains(text)) {
 						commitComposingChar();
-						composingWordStrokeHistory.push(composingWordStroke);
+						appendWord(composingWord, composingWordStroke, 0);
+						clearComposing();
 						composingWord += text;
 						composingWordStroke += text;
-						appendWord(composingWord, composingWordStroke);
+						appendWord(composingWord, composingWordStroke, 0);
 						clearComposing();
 						updateInput();
 						start = true;
@@ -612,8 +659,12 @@ public class LBoard extends InputMethodService {
 		this.composingCharStroke = "";
 	}
 
-	public void appendWord(String composingWord, String ComposingWordStroke) {
-		Word word = new Word(composingWord, composingWordStroke, 1);
+	public void appendWord(String composingWord, String composingWordStroke) {
+		this.appendWord(composingWord, composingWordStroke, 0);
+	}
+
+	public void appendWord(String composingWord, String composingWordStroke, int attribute) {
+		Word word = new Word(composingWord, composingWordStroke, 1, attribute);
 		this.appendWord(word);
 	}
 
@@ -630,7 +681,6 @@ public class LBoard extends InputMethodService {
 		InputConnection ic = getCurrentInputConnection();
 		SpannableStringBuilder str = new SpannableStringBuilder();
 		str.append(sentence.getCandidate());
-		if(str.length() > 0) str.append(" ");
 		int start = 0, end = str.length();
 		str.setSpan(SPAN_COMPOSING_SENTENCE, start, end, Spanned.SPAN_COMPOSING);
 		str.append(composingWord);
@@ -667,15 +717,17 @@ public class LBoard extends InputMethodService {
 	}
 
 	public void learnWord(Word word) {
-		if(dictionary instanceof SQLiteDictionary && word.getCandidate() != "") {
-			SQLiteDictionary dictionary = (SQLiteDictionary) this.dictionary;
+		LBoardDictionary current = dictionaryManager.getDictionary(currentInputMethod.getDictionaryName());
+		if(current instanceof SQLiteDictionary && word.getCandidate() != "") {
+			SQLiteDictionary dictionary = (SQLiteDictionary) current;
 			dictionary.learnWord(word);
 		}
 	}
 
 	public void learnWordChain(WordChain prev) {
-		if(dictionary instanceof SQLiteDictionary) {
-			SQLiteDictionary dictionary = (SQLiteDictionary) this.dictionary;
+		LBoardDictionary current = dictionaryManager.getDictionary(currentInputMethod.getDictionaryName());
+		if(current instanceof SQLiteDictionary) {
+			SQLiteDictionary dictionary = (SQLiteDictionary) current;
 			dictionary.learnChain(prev);
 		}
 	}
