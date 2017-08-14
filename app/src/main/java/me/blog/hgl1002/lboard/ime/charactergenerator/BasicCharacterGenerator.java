@@ -4,7 +4,7 @@ import java.util.Map;
 import java.util.Stack;
 
 import me.blog.hgl1002.lboard.expression.TreeParser;
-import me.blog.hgl1002.lboard.ime.hardkeyboard.basic.AutomataTable;
+import me.blog.hgl1002.lboard.ime.charactergenerator.basic.AutomataTable;
 
 import static me.blog.hgl1002.lboard.ime.charactergenerator.BasicCodeSystem.*;
 

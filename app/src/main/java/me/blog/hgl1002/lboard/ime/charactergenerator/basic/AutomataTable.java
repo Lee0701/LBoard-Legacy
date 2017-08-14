@@ -1,4 +1,4 @@
-package me.blog.hgl1002.lboard.ime.hardkeyboard.basic;
+package me.blog.hgl1002.lboard.ime.charactergenerator.basic;
 
 import java.util.Map;
 
