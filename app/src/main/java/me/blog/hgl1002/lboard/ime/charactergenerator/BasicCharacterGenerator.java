@@ -56,7 +56,7 @@ public class BasicCharacterGenerator implements CharacterGenerator {
 			if(hasJung(code)) {
 				jung = (int) ((code & MASK_JUNG) >> 0x10);
 				currentState.iJung = jung;
-				currentState.syllable &= ~MASK_JUNG
+				currentState.syllable &= ~MASK_JUNG;
 			}
 			if(hasJong(code)) {
 				jong = (int) ((code & MASK_JONG) >> 0x00);
@@ -69,21 +69,18 @@ public class BasicCharacterGenerator implements CharacterGenerator {
 				if(currentState.cho != 0) {
 					// TODO: try to combine jamo.
 				}
-				cho = cho;
 				syllable &= ~MASK_CHO;
 				syllable |= cho << 0x20;
 			}
 			if(jung != 0) {
 				if(currentState.jung != 0) {
 				}
-				jung = jung;
 				syllable &= ~MASK_JUNG;
 				syllable |= jung << 0x10;
 			}
 			if(jong != 0) {
 				if(currentState.jong != 0) {
 				}
-				jong = jong;
 				syllable &= ~MASK_JONG;
 				syllable |= jong << 0x00;
 			}
