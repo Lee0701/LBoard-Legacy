@@ -89,7 +89,9 @@ public class BasicCharacterGenerator implements CharacterGenerator {
 			if(jung != 0) currentState.jung = jung;
 			if(jong != 0) currentState.jong = jong;
 			currentState.syllable = syllable;
-			// TODO onCompose()
+
+			String composing = convertToUnicode(currentState.syllable);
+			if(listener != null) listener.onCompose(this, composing);
 			return true;
 		}
 		return false;
@@ -101,7 +103,8 @@ public class BasicCharacterGenerator implements CharacterGenerator {
 			return false;
 		} else {
 			currentState = previousStates.pop();
-			// TODO onCompose()
+			String composing = convertToUnicode(currentState.syllable);
+			if(listener != null) listener.onCompose(this, composing);
 			return true;
 		}
 	}
@@ -110,6 +113,7 @@ public class BasicCharacterGenerator implements CharacterGenerator {
 	public void resetComposing() {
 		previousStates.clear();
 		currentState = new State();
+		listener.onCommit(this);
 	}
 
 	@Override
