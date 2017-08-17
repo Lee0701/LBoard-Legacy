@@ -55,9 +55,12 @@ import me.blog.hgl1002.lboard.engine.Sentence;
 import me.blog.hgl1002.lboard.engine.Word;
 import me.blog.hgl1002.lboard.engine.WordChain;
 import me.blog.hgl1002.lboard.ime.LBoardInputMethod;
+import me.blog.hgl1002.lboard.ime.charactergenerator.BasicCharacterGenerator;
 import me.blog.hgl1002.lboard.ime.charactergenerator.CharacterGenerator;
 import me.blog.hgl1002.lboard.ime.charactergenerator.UnicodeCharacterGenerator;
+import me.blog.hgl1002.lboard.ime.hardkeyboard.BasicHardKeyboard;
 import me.blog.hgl1002.lboard.ime.hardkeyboard.lhkb.LHKB1;
+import me.blog.hgl1002.lboard.ime.hardkeyboard.lhkb.LHKB2;
 import me.blog.hgl1002.lboard.ime.softkeyboard.DefaultSoftKeyboard;
 
 import me.blog.hgl1002.lboard.ime.KeyEventInfo;
@@ -218,6 +221,7 @@ public class LBoard extends InputMethodService {
 		LBoardInputMethod sebeolFinal, qwerty;
 
 		{
+///*
 			DefaultSoftKeyboard softKeyboard = new DefaultSoftKeyboard(this);
 			DefaultHardKeyboard hardKeyboard = new DefaultHardKeyboard(this);
 			UnicodeCharacterGenerator generator = new UnicodeCharacterGenerator();
@@ -236,7 +240,16 @@ public class LBoard extends InputMethodService {
 				}
 			}
 			softKeyboard.setLabels(labels);
-
+//*/
+/*
+			DefaultSoftKeyboard softKeyboard = new DefaultSoftKeyboard(this);
+			softKeyboard.createKeyboards(this, R.xml.keyboard_full_10cols, R.xml.keyboard_full_10cols, R.xml.keyboard_lower_default);
+			BasicHardKeyboard hardKeyboard = new BasicHardKeyboard(this);
+			BasicCharacterGenerator generator = new BasicCharacterGenerator(hardKeyboard.getParser());
+			generator.setListener(characterGeneratorListener);
+			hardKeyboard.setCharacterGenerator(generator);
+			hardKeyboard.setMappings(LHKB2.loadMappings(getResources().openRawResource(R.raw.layout_sebeol_final_3)));
+*/
 			sebeolFinal = new LBoardInputMethod("Sebeolsik Final", softKeyboard, hardKeyboard, generator);
 			sebeolFinal.setDictionaryName(DICTIONARY_KO);
 		}

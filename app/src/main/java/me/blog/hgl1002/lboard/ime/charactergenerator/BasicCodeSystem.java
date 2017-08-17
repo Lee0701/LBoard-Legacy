@@ -5,6 +5,8 @@ public class BasicCodeSystem implements CodeSystem {
 	public static final long H3 = 0x0003000000000000L;
 	public static final long H2 = 0x0002000000000000L;
 
+	public static final long MASK_CODE_TYPE = 0xffff000000000000L;
+
 	public static final long MASK_CHO  = 0x0000ffff00000000L;
 	public static final long MASK_JUNG = 0x00000000ffff0000L;
 	public static final long MASK_JONG = 0x000000000000ffffL;
@@ -34,15 +36,15 @@ public class BasicCodeSystem implements CodeSystem {
 	public static String convertToUnicode(long code) {
 		if(isH3(code) || isH2(code)) {
 			if(isCho(code)) {
-				char converted = CHO_TABLE[(int) code];
+				char converted = CHO_TABLE[getCho(code)-1];
 				if(converted == 0) return new String(Character.toChars(getCho(code) + 0x10ff));
 				return new String(Character.toChars(converted));
 			} else if(isJung(code)) {
-				char converted = JUNG_TABLE[(int) code];
+				char converted = JUNG_TABLE[getJung(code)-1];
 				if(converted == 0) return new String(Character.toChars(getJung(code) + 0x1160));
 				return new String(Character.toChars(converted));
 			} else if(isJong(code)) {
-				char converted = JONG_TABLE[(int) code];
+				char converted = JONG_TABLE[getJong(code)];
 				if(converted == 0) return new String(Character.toChars(getJong(code) + 0x11a7));
 				return new String(Character.toChars(converted));
 			} else if(hasCho(code) && hasJung(code)) {

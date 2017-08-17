@@ -139,4 +139,12 @@ public class BasicHardKeyboard implements HardKeyboard {
 	public void setCharacterGenerator(CharacterGenerator characterGenerator) {
 		this.characterGenerator = characterGenerator;
 	}
+
+	public TreeParser getParser() {
+		return parser;
+	}
+
+	public void setParser(TreeParser parser) {
+		this.parser = parser;
+	}
 }

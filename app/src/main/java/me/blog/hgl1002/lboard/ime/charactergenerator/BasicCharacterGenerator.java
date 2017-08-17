@@ -49,19 +49,16 @@ public class BasicCharacterGenerator implements CharacterGenerator {
 			int cho, jung, jong;
 			cho = jung = jong = 0;
 			if(hasCho(code)) {
-				cho = (int) ((code & MASK_CHO) >> 0x20);
+				cho = (int) getCho(code);
 				currentState.iCho = cho;
-				currentState.syllable &= ~MASK_CHO;
 			}
 			if(hasJung(code)) {
-				jung = (int) ((code & MASK_JUNG) >> 0x10);
+				jung = (int) getJung(code);
 				currentState.iJung = jung;
-				currentState.syllable &= ~MASK_JUNG;
 			}
 			if(hasJong(code)) {
-				jong = (int) ((code & MASK_JONG) >> 0x00);
+				jong = (int) getJong(code);
 				currentState.iJong = jong;
-				currentState.syllable &= ~MASK_JONG;
 			}
 			// TODO: evaluate normal automata.
 			long syllable = currentState.syllable;
@@ -70,24 +67,25 @@ public class BasicCharacterGenerator implements CharacterGenerator {
 					// TODO: try to combine jamo.
 				}
 				syllable &= ~MASK_CHO;
-				syllable |= cho << 0x20;
+				syllable |= fromCho(cho);
 			}
 			if(jung != 0) {
 				if(currentState.jung != 0) {
 				}
 				syllable &= ~MASK_JUNG;
-				syllable |= jung << 0x10;
+				syllable |= fromJung(jung);
 			}
 			if(jong != 0) {
 				if(currentState.jong != 0) {
 				}
 				syllable &= ~MASK_JONG;
-				syllable |= jong << 0x00;
+				syllable |= fromJong(jong);
 			}
 			// TODO check hangul range.
 			if(cho != 0) currentState.cho = cho;
 			if(jung != 0) currentState.jung = jung;
 			if(jong != 0) currentState.jong = jong;
+			syllable = (syllable & ~MASK_CODE_TYPE) | H3;
 			currentState.syllable = syllable;
 
 			String composing = convertToUnicode(currentState.syllable);
@@ -104,6 +102,7 @@ public class BasicCharacterGenerator implements CharacterGenerator {
 		} else {
 			currentState = previousStates.pop();
 			String composing = convertToUnicode(currentState.syllable);
+			if(currentState.syllable == 0) composing = "";
 			if(listener != null) listener.onCompose(this, composing);
 			return true;
 		}
