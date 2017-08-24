@@ -1,5 +1,6 @@
 package me.blog.hgl1002.lboard.ime.charactergenerator.basic;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import me.blog.hgl1002.lboard.expression.nodes.ConstantTreeNode;
@@ -9,6 +10,7 @@ public class AutomataTable {
 	protected Map<Long, AutomataRule> table;
 
 	public AutomataTable() {
+		table = new HashMap<>();
 		AutomataRule initial = new AutomataRule();
 		initial.setInitialState(0);
 		initial.setTargetState(new ConstantTreeNode(0L));
@@ -16,6 +18,7 @@ public class AutomataTable {
 	}
 
 	public AutomataTable(AutomataRule initial) {
+		table = new HashMap<>();
 		table.put(0L, initial);
 	}
 

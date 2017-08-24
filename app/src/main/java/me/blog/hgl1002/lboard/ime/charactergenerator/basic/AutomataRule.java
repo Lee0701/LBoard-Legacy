@@ -8,6 +8,17 @@ public class AutomataRule {
 	protected long failState;
 	protected String description;
 
+	public AutomataRule(long initialState, TreeNode targetState, long failState, String description) {
+		this.initialState = initialState;
+		this.targetState = targetState;
+		this.failState = failState;
+		this.description = description;
+	}
+
+	public AutomataRule() {
+
+	}
+
 	public long getInitialState() {
 		return initialState;
 	}

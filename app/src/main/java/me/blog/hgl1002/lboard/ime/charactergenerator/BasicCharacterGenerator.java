@@ -1,9 +1,11 @@
 package me.blog.hgl1002.lboard.ime.charactergenerator;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
 
 import me.blog.hgl1002.lboard.expression.TreeParser;
+import me.blog.hgl1002.lboard.ime.charactergenerator.basic.AutomataRule;
 import me.blog.hgl1002.lboard.ime.charactergenerator.basic.AutomataTable;
 
 import static me.blog.hgl1002.lboard.ime.charactergenerator.BasicCodeSystem.*;
@@ -19,13 +21,23 @@ public class BasicCharacterGenerator implements CharacterGenerator {
 
 	protected AutomataTable automataTable;
 
-	protected static class State {
+	protected static class State implements Cloneable {
 		long syllable;
-		int status;
+		long status;
 		int H;
 		int iCho, iJung, iJong;
 		int cho, jung, jong;
-
+		@Override
+		public Object clone() {
+			State state = new State();
+			state.syllable = syllable;
+			state.status = status;
+			state.H = H;
+			state.cho = cho;
+			state.jung = jung;
+			state.jong = jong;
+			return state;
+		}
 	}
 
 	public BasicCharacterGenerator(TreeParser parser) {
@@ -39,11 +51,7 @@ public class BasicCharacterGenerator implements CharacterGenerator {
 		if(isH3(code)) {
 			State previousState = currentState;
 			previousStates.push(currentState);
-			currentState = new State();
-			currentState.cho = previousState.cho;
-			currentState.jung = previousState.jung;
-			currentState.jong = previousState.jong;
-			currentState.syllable = previousState.syllable;
+			currentState = (State) currentState.clone();
 
 			currentState.H = 3;
 			int cho, jung, jong;
@@ -60,7 +68,9 @@ public class BasicCharacterGenerator implements CharacterGenerator {
 				jong = (int) getJong(code);
 				currentState.iJong = jong;
 			}
-			// TODO: evaluate normal automata.
+
+			processAutomata();
+
 			long syllable = currentState.syllable;
 			if(cho != 0) {
 				if(currentState.cho != 0) {
@@ -95,6 +105,21 @@ public class BasicCharacterGenerator implements CharacterGenerator {
 		return false;
 	}
 
+	public void processAutomata() {
+		AutomataRule automata = automataTable.get(currentState.status);
+		parser.setVariables(getVariables());
+		long result = parser.parse(automata.getTargetState());
+		currentState.status = result;
+		if(result == 0) {
+			automata = automataTable.get(0);
+			parser.setVariables(getVariables());
+			resetComposing();
+			previousStates.push(currentState);
+			currentState = (State) currentState.clone();
+			currentState.status = parser.parse(automata.getTargetState());
+		}
+	}
+
 	@Override
 	public boolean backspace() {
 		if(previousStates.isEmpty()) {
@@ -122,7 +147,11 @@ public class BasicCharacterGenerator implements CharacterGenerator {
 
 	@Override
 	public Map<String, Long> getVariables() {
-		return null;
+		Map<String, Long> variables = new HashMap<>();
+		variables.put("A", (long) currentState.iCho);
+		variables.put("B", (long) currentState.iJung);
+		variables.put("C", (long) currentState.iJong);
+		return variables;
 	}
 
 	@Override
@@ -133,5 +162,29 @@ public class BasicCharacterGenerator implements CharacterGenerator {
 	@Override
 	public void removeListener() {
 		this.listener = null;
+	}
+
+	public TreeParser getParser() {
+		return parser;
+	}
+
+	public void setParser(TreeParser parser) {
+		this.parser = parser;
+	}
+
+	public State getCurrentState() {
+		return currentState;
+	}
+
+	public void setCurrentState(State currentState) {
+		this.currentState = currentState;
+	}
+
+	public AutomataTable getAutomataTable() {
+		return automataTable;
+	}
+
+	public void setAutomataTable(AutomataTable automataTable) {
+		this.automataTable = automataTable;
 	}
 }

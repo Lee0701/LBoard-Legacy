@@ -54,10 +54,14 @@ import me.blog.hgl1002.lboard.engine.SQLiteDictionary;
 import me.blog.hgl1002.lboard.engine.Sentence;
 import me.blog.hgl1002.lboard.engine.Word;
 import me.blog.hgl1002.lboard.engine.WordChain;
+import me.blog.hgl1002.lboard.expression.StringRecursionTreeBuilder;
+import me.blog.hgl1002.lboard.expression.TreeBuilder;
 import me.blog.hgl1002.lboard.ime.LBoardInputMethod;
 import me.blog.hgl1002.lboard.ime.charactergenerator.BasicCharacterGenerator;
 import me.blog.hgl1002.lboard.ime.charactergenerator.CharacterGenerator;
 import me.blog.hgl1002.lboard.ime.charactergenerator.UnicodeCharacterGenerator;
+import me.blog.hgl1002.lboard.ime.charactergenerator.basic.AutomataRule;
+import me.blog.hgl1002.lboard.ime.charactergenerator.basic.AutomataTable;
 import me.blog.hgl1002.lboard.ime.hardkeyboard.BasicHardKeyboard;
 import me.blog.hgl1002.lboard.ime.hardkeyboard.lhkb.LHKB1;
 import me.blog.hgl1002.lboard.ime.hardkeyboard.lhkb.LHKB2;
@@ -221,7 +225,7 @@ public class LBoard extends InputMethodService {
 		LBoardInputMethod sebeolFinal, qwerty;
 
 		{
-///*
+/*
 			DefaultSoftKeyboard softKeyboard = new DefaultSoftKeyboard(this);
 			DefaultHardKeyboard hardKeyboard = new DefaultHardKeyboard(this);
 			UnicodeCharacterGenerator generator = new UnicodeCharacterGenerator();
@@ -240,16 +244,22 @@ public class LBoard extends InputMethodService {
 				}
 			}
 			softKeyboard.setLabels(labels);
-//*/
-/*
+*/
+///*
 			DefaultSoftKeyboard softKeyboard = new DefaultSoftKeyboard(this);
 			softKeyboard.createKeyboards(this, R.xml.keyboard_full_10cols, R.xml.keyboard_full_10cols, R.xml.keyboard_lower_default);
 			BasicHardKeyboard hardKeyboard = new BasicHardKeyboard(this);
 			BasicCharacterGenerator generator = new BasicCharacterGenerator(hardKeyboard.getParser());
 			generator.setListener(characterGeneratorListener);
+			TreeBuilder builder = new StringRecursionTreeBuilder();
+			AutomataTable table = new AutomataTable(new AutomataRule(0, builder.build("A ? 1 : B ? 2 : C ? 3 : 0"), 0, ""));
+			table.set(1, new AutomataRule(0, builder.build("A ? 1 : B ? 2 : C ? 3 : 0"), 0, ""));
+			table.set(2, new AutomataRule(0, builder.build("B ? 2 : C ? 3 : 0"), 0, ""));
+			table.set(3, new AutomataRule(0, builder.build("C ? 3 : 0"), 0, ""));
+			generator.setAutomataTable(table);
 			hardKeyboard.setCharacterGenerator(generator);
 			hardKeyboard.setMappings(LHKB2.loadMappings(getResources().openRawResource(R.raw.layout_sebeol_final_3)));
-*/
+//*/
 			sebeolFinal = new LBoardInputMethod("Sebeolsik Final", softKeyboard, hardKeyboard, generator);
 			sebeolFinal.setDictionaryName(DICTIONARY_KO);
 		}
