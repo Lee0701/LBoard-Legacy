@@ -240,6 +240,16 @@ public class DefaultSoftKeyboard implements SoftKeyboard, KeyboardView.OnKeyboar
 
 	}
 
+	public void setOnKeyboardActionListener(KeyboardView.OnKeyboardActionListener listener) {
+		mainKeyboardView.setOnKeyboardActionListener(listener);
+		lowerKeyboardView.setOnKeyboardActionListener(listener);
+	}
+
+	public void setOnAdvancedActionListener(DefaultSoftKeyboardView.OnAdvancedActionListener listener) {
+		mainKeyboardView.setOnAdvancedActionListener(listener);
+		lowerKeyboardView.setOnAdvancedActionListener(listener);
+	}
+
 	public CharSequence[][] getLabels() {
 		return labels;
 	}
