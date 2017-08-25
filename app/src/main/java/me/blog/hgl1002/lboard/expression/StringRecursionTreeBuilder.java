@@ -1,17 +1,22 @@
 package me.blog.hgl1002.lboard.expression;
 
+import java.util.Map;
+
 import me.blog.hgl1002.lboard.expression.nodes.*;
 
 public class StringRecursionTreeBuilder implements TreeBuilder {
+
+	Map<String, Long> constants;
+
+	@Override
+	public void setConstants(Map<String, Long> constants) {
+		this.constants = constants;
+	}
 
 	@Override
 	public TreeNode build(Object o) {
 		final String str = (String) o;
 		return new Object() {
-
-			TreeNode result;
-
-			String context;
 
 			int pos = -1, ch;
 
@@ -259,12 +264,14 @@ public class StringRecursionTreeBuilder implements TreeBuilder {
 					if(hex) num = Long.parseLong(str.substring(startPos, this.pos), 16);
 					else num = Long.parseLong(str.substring(startPos, this.pos));
 					x = new ConstantTreeNode(num);
-					this.context = null;
 				} else if((ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z')) {
 					while((ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z')) nextChar();
 					String var = str.substring(startPos, this.pos);
-					x = new VariableTreeNode(var);
-					this.context = var;
+					if(constants.containsKey(var)) {
+						x = new ConstantTreeNode(constants.get(var));
+					} else {
+						x = new VariableTreeNode(var);
+					}
 				} else {
 					throw new RuntimeException("Unexpected: " + (char)ch + " at: " + pos);
 				}
