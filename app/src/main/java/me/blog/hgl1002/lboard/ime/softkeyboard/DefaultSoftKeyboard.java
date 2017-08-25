@@ -84,7 +84,6 @@ public class DefaultSoftKeyboard implements SoftKeyboard, KeyboardView.OnKeyboar
 
 		this.shiftPressed = false;
 		this.shiftLocked = false;
-		parent.onKeyEvent(new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_SHIFT_LEFT), false);
 
 		updateLabels();
 		setDefaultKeyboards();

@@ -6,6 +6,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
 import java.util.Stack;
 
@@ -14,6 +15,13 @@ import me.blog.hgl1002.lboard.expression.nodes.*;
 import static me.blog.hgl1002.lboard.expression.nodes.TreeNode.*;
 
 public class BinaryIterationTreeBuilder implements TreeBuilder {
+
+	Map<String, Long> constants;
+
+	@Override
+	public void setConstants(Map<String, Long> constants) {
+		this.constants = constants;
+	}
 
 	@Override
 	public TreeNode build(Object o) {
@@ -56,7 +64,12 @@ public class BinaryIterationTreeBuilder implements TreeBuilder {
 						while((b = bb.get()) != 0) {
 							name.append((char) b);
 						}
-						current = new VariableTreeNode(name.toString());
+						String str = name.toString();
+						if(constants.containsKey(str)) {
+							current = new ConstantTreeNode(constants.get(str));
+						} else {
+							current = new VariableTreeNode(name.toString());
+						}
 						operands.push(current);
 						break;
 					}
