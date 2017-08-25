@@ -34,14 +34,17 @@ import android.widget.Toast;
 
 import java.io.ByteArrayOutputStream;
 
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Properties;
 import java.util.Stack;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -56,6 +59,8 @@ import me.blog.hgl1002.lboard.engine.Word;
 import me.blog.hgl1002.lboard.engine.WordChain;
 import me.blog.hgl1002.lboard.expression.StringRecursionTreeBuilder;
 import me.blog.hgl1002.lboard.expression.TreeBuilder;
+import me.blog.hgl1002.lboard.ime.InputMethodLoader;
+import me.blog.hgl1002.lboard.ime.InternalInputMethodLoader;
 import me.blog.hgl1002.lboard.ime.LBoardInputMethod;
 import me.blog.hgl1002.lboard.ime.charactergenerator.BasicCharacterGenerator;
 import me.blog.hgl1002.lboard.ime.charactergenerator.CharacterGenerator;
@@ -222,63 +227,7 @@ public class LBoard extends InputMethodService {
 		slideDown = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.slide_down);
 		slideUp = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.slide_up);
 
-		LBoardInputMethod sebeolFinal, qwerty;
-
-		{
-/*
-			DefaultSoftKeyboard softKeyboard = new DefaultSoftKeyboard(this);
-			DefaultHardKeyboard hardKeyboard = new DefaultHardKeyboard(this);
-			UnicodeCharacterGenerator generator = new UnicodeCharacterGenerator();
-			generator.setListener(characterGeneratorListener);
-			generator.setCombinationTable(UnicodeCharacterGenerator.loadCombinationTable(getResources().openRawResource(R.raw.comb_sebeol)));
-			hardKeyboard.setCharacterGenerator(generator);
-			hardKeyboard.setMappings(LHKB1.loadMappings(getResources().openRawResource(R.raw.layout_sebeol_final)));
-
-			softKeyboard.createKeyboards(this, R.xml.keyboard_full_10cols, R.xml.keyboard_full_10cols, R.xml.keyboard_lower_default);
-			CharSequence[][] labels = new CharSequence[0x100][2];
-			for(int i = 0 ; i < labels.length ; i++) {
-				for(int j = 0 ; j < labels[i].length ; j++) {
-					long mapping = hardKeyboard.getMappings()[i][j];
-					if(mapping != 0) labels[i][j] = new String(new char[] {(char) mapping});
-					else labels[i][j] = null;
-				}
-			}
-			softKeyboard.setLabels(labels);
-*/
-///*
-			DefaultSoftKeyboard softKeyboard = new DefaultSoftKeyboard(this);
-			softKeyboard.createKeyboards(this, R.xml.keyboard_full_10cols, R.xml.keyboard_full_10cols, R.xml.keyboard_lower_default);
-			BasicHardKeyboard hardKeyboard = new BasicHardKeyboard(this);
-			BasicCharacterGenerator generator = new BasicCharacterGenerator(hardKeyboard.getParser());
-			generator.setListener(characterGeneratorListener);
-			TreeBuilder builder = new StringRecursionTreeBuilder();
-			AutomataTable table = new AutomataTable(new AutomataRule(0, builder.build("A ? 1 : B ? 2 : C ? 3 : 0"), 0, ""));
-			table.set(1, new AutomataRule(0, builder.build("A ? 1 : B ? 2 : C ? 3 : 0"), 0, ""));
-			table.set(2, new AutomataRule(0, builder.build("B ? 2 : C ? 3 : 0"), 0, ""));
-			table.set(3, new AutomataRule(0, builder.build("C ? 3 : 0"), 0, ""));
-			generator.setAutomataTable(table);
-			hardKeyboard.setCharacterGenerator(generator);
-			hardKeyboard.setMappings(LHKB2.loadMappings(getResources().openRawResource(R.raw.layout_sebeol_final_3)));
-//*/
-			sebeolFinal = new LBoardInputMethod("Sebeolsik Final", softKeyboard, hardKeyboard, generator);
-			sebeolFinal.setDictionaryName(DICTIONARY_KO);
-		}
-
-		{
-			DefaultSoftKeyboard softKeyboard = new DefaultSoftKeyboard(this);
-			DefaultHardKeyboard hardKeyboard = new DefaultHardKeyboard(this);
-			CharacterGenerator generator = new UnicodeCharacterGenerator();
-			generator.setListener(characterGeneratorListener);
-			hardKeyboard.setMappings(LHKB1.loadMappings(getResources().openRawResource(R.raw.layout_qwerty)));
-
-			softKeyboard.createKeyboards(this, R.xml.keyboard_qwerty_4rows, R.xml.keyboard_qwerty_4rows, R.xml.keyboard_lower_default);
-
-			qwerty = new LBoardInputMethod("Qwerty", softKeyboard, hardKeyboard, generator);
-			qwerty.setDictionaryName(DICTIONARY_EN);
-		}
-
-		inputMethods.add(qwerty);
-		inputMethods.add(sebeolFinal);
+		loadInputMethods();
 
 		currentInputMethod = inputMethods.get(currentInputMethodId);
 
@@ -299,6 +248,88 @@ public class LBoard extends InputMethodService {
 		startNewSentence(null);
 
 		updatePrediction();
+	}
+
+	public void loadInputMethods() {
+		InputMethodLoader loader = new InternalInputMethodLoader(this);
+		File file = new File(getFilesDir(), "methods");
+		if(!file.exists()) {
+			try {
+				{
+					File qwerty = new File(file, "Qwerty");
+					qwerty.mkdirs();
+					File lime = new File(qwerty, "method.lime");
+					FileOutputStream fos = new FileOutputStream(lime);
+					DataOutputStream dos = new DataOutputStream(fos);
+					for(char c : InternalInputMethodLoader.MAGIC_NUMBER.toCharArray()) {
+						dos.writeByte((byte) c);
+					}
+					for(char c : "Qwerty".toCharArray()) {
+						dos.writeByte((byte) c);
+					}
+					dos.writeByte(0);
+					dos.writeByte(InternalInputMethodLoader.SOFT_DEFAULT);
+					dos.writeByte(InternalInputMethodLoader.HARD_DEFAULT);
+					dos.writeByte(InternalInputMethodLoader.CG_UNICODE);
+
+					Properties properties = new Properties();
+					properties.setProperty(InternalInputMethodLoader.KEY_DEFAULT_SOFT_MAIN, "keyboard_qwerty_4rows");
+					properties.setProperty(InternalInputMethodLoader.KEY_DEFAULT_SOFT_MAIN_SHIFT, "keyboard_qwerty_4rows");
+					properties.setProperty(InternalInputMethodLoader.KEY_DEFAULT_SOFT_LOWER, "keyboard_lower_default");
+					properties.store(new FileOutputStream(new File(qwerty, InternalInputMethodLoader.FILENAME_DEFAULT_SOFT_DEF)), "");
+
+					InputStream is = getResources().openRawResource(R.raw.layout_qwerty);
+					byte[] data = new byte[is.available()];
+					is.read(data);
+					fos = new FileOutputStream(new File(qwerty, InternalInputMethodLoader.FILENAME_DEFAULT_HARD));
+					fos.write(data);
+				}
+				{
+					File sebeolFinal = new File(file, "Sebeolsik Final");
+					sebeolFinal.mkdirs();
+					File lime = new File(sebeolFinal, "method.lime");
+					FileOutputStream fos = new FileOutputStream(lime);
+					DataOutputStream dos = new DataOutputStream(fos);
+					for(char c : InternalInputMethodLoader.MAGIC_NUMBER.toCharArray()) {
+						dos.writeByte((byte) c);
+					}
+					for(char c : "Sebeolsik Final".toCharArray()) {
+						dos.writeByte((byte) c);
+					}
+					dos.writeByte(0);
+					dos.writeByte(InternalInputMethodLoader.SOFT_DEFAULT);
+					dos.writeByte(InternalInputMethodLoader.HARD_BASIC);
+					dos.writeByte(InternalInputMethodLoader.CG_BASIC);
+
+					Properties properties = new Properties();
+					properties.setProperty(InternalInputMethodLoader.KEY_DEFAULT_SOFT_MAIN, "keyboard_full_10cols");
+					properties.setProperty(InternalInputMethodLoader.KEY_DEFAULT_SOFT_MAIN_SHIFT, "keyboard_full_10cols");
+					properties.setProperty(InternalInputMethodLoader.KEY_DEFAULT_SOFT_LOWER, "keyboard_lower_default");
+					properties.store(new FileOutputStream(new File(sebeolFinal, InternalInputMethodLoader.FILENAME_DEFAULT_SOFT_DEF)), "");
+
+					InputStream is = getResources().openRawResource(R.raw.layout_sebeol_final_3);
+					byte[] data = new byte[is.available()];
+					is.read(data);
+					fos = new FileOutputStream(new File(sebeolFinal, InternalInputMethodLoader.FILENAME_BASIC_HARD));
+					fos.write(data);
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+
+		}
+		LBoardInputMethod qwerty = loader.load(new File(file, "Qwerty/method.lime"));
+		LBoardInputMethod sebeolFinal = loader.load(new File(file, "Sebeolsik Final/method.lime"));
+
+		qwerty.getCharacterGenerator().setListener(characterGeneratorListener);
+		sebeolFinal.getCharacterGenerator().setListener(characterGeneratorListener);
+
+		qwerty.setDictionaryName(DICTIONARY_EN);
+		sebeolFinal.setDictionaryName(DICTIONARY_KO);
+
+		inputMethods.add(sebeolFinal);
+		inputMethods.add(qwerty);
+
 	}
 
 	@Override
