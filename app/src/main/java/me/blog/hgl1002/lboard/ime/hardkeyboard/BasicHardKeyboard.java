@@ -4,6 +4,8 @@ import android.content.SharedPreferences;
 import android.view.KeyEvent;
 import android.view.inputmethod.EditorInfo;
 
+import java.util.Map;
+
 import me.blog.hgl1002.lboard.LBoard;
 import me.blog.hgl1002.lboard.expression.TreeParser;
 import me.blog.hgl1002.lboard.expression.nodes.TreeNode;
@@ -77,6 +79,8 @@ public class BasicHardKeyboard implements HardKeyboard {
 					if (keyCode >= 0 && keyCode < mappings.length) {
 						TreeNode node = mappings[keyCode][shiftPressing ? 1 : 0];
 						long result = 0;
+						Map<String, Long> variables = characterGenerator.getVariables();
+						parser.setVariables(variables);
 						if(node != null) result = parser.parse(node);
 						if (result != 0) {
 							boolean ret = characterGenerator.onCode(result);

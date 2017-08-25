@@ -107,7 +107,12 @@ public class BasicCharacterGenerator implements CharacterGenerator {
 
 	public void processAutomata() {
 		AutomataRule automata = automataTable.get(currentState.status);
-		parser.setVariables(getVariables());
+		Map<String, Long> variables = getVariables();
+		variables.put("A", (long) currentState.iCho);
+		variables.put("B", (long) currentState.iJung);
+		variables.put("C", (long) currentState.iJong);
+		variables.put("T", 0L);
+		parser.setVariables(variables);
 		long result = parser.parse(automata.getTargetState());
 		currentState.status = result;
 		if(result == 0) {
@@ -148,9 +153,10 @@ public class BasicCharacterGenerator implements CharacterGenerator {
 	@Override
 	public Map<String, Long> getVariables() {
 		Map<String, Long> variables = new HashMap<>();
-		variables.put("A", (long) currentState.iCho);
-		variables.put("B", (long) currentState.iJung);
-		variables.put("C", (long) currentState.iJong);
+		variables.put("D", (long) currentState.cho);
+		variables.put("E", (long) currentState.jung);
+		variables.put("F", (long) currentState.jong);
+		variables.put("T", currentState.status);
 		return variables;
 	}
 
