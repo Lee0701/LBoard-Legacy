@@ -21,13 +21,6 @@ public class TreeParser {
 				return variables.get(variableTreeNode.getName());
 			} else
 				return 0;
-		} else if (node instanceof ConstantRepresentationTreeNode) {
-			ConstantRepresentationTreeNode representationTreeNode = (ConstantRepresentationTreeNode) node;
-			if(constants.containsKey(representationTreeNode.getName())) {
-				return constants.get(representationTreeNode.getName());
-			} else {
-				throw new RuntimeException("Constant " + representationTreeNode.getName() + " is not defined.");
-			}
 		} else if (node instanceof UnaryTreeNode) {
 			return unaryOperation((UnaryTreeNode) node);
 		} else if (node instanceof BinaryTreeNode) {

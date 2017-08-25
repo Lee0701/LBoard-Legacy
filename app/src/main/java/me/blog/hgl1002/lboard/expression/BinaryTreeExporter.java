@@ -46,12 +46,6 @@ public class BinaryTreeExporter implements TreeExporter {
 						dos.writeByte((byte) c);
 					}
 					dos.writeByte(0);
-				} else if (node instanceof ConstantRepresentationTreeNode) {
-					dos.writeByte(TreeNode.TYPE_CONSTANT_REP);
-					for(char c : ((VariableTreeNode) node).getName().toCharArray()) {
-						dos.writeByte((byte) c);
-					}
-					dos.writeByte(0);
 				} else if (node instanceof UnaryTreeNode) {
 					UnaryTreeNode unaryTreeNode = (UnaryTreeNode) node;
 					export(unaryTreeNode.getCenter());

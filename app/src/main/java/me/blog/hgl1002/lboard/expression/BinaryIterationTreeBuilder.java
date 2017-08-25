@@ -50,16 +50,6 @@ public class BinaryIterationTreeBuilder implements TreeBuilder {
 						operands.push(current);
 						break;
 					}
-					case TYPE_CONSTANT_REP: {
-						StringBuilder name = new StringBuilder();
-						byte b;
-						while((b = bb.get()) != 0) {
-							name.append((char) b);
-						}
-						current = new ConstantRepresentationTreeNode(name.toString());
-						operands.push(current);
-						break;
-					}
 					case TYPE_VARIABLE: {
 						StringBuilder name = new StringBuilder();
 						byte b;
