@@ -13,11 +13,11 @@ public class Operator {
 	public static final int DECREMENT_LEFT = 7;
 	public static final int DECREMENT_RIGHT = 8;
 
-	public static final int ADDITION = 9;
-	public static final int SUBTRACTION = 10;
-	public static final int MULTIPLICATION = 11;
-	public static final int DIVISION = 12;
-	public static final int MOD = 13;
+	public static final int MULTIPLICATION = 9;
+	public static final int DIVISION = 10;
+	public static final int MOD = 11;
+	public static final int ADDITION = 12;
+	public static final int SUBTRACTION = 13;
 
 	public static final int SHIFT_LEFT = 14;
 	public static final int SHIFT_RIGHT = 15;

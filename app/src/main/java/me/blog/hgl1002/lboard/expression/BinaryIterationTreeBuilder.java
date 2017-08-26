@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
@@ -16,7 +17,7 @@ import static me.blog.hgl1002.lboard.expression.nodes.TreeNode.*;
 
 public class BinaryIterationTreeBuilder implements TreeBuilder {
 
-	Map<String, Long> constants;
+	Map<String, Long> constants = new HashMap<>();
 
 	@Override
 	public void setConstants(Map<String, Long> constants) {

@@ -1,12 +1,13 @@
 package me.blog.hgl1002.lboard.expression;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import me.blog.hgl1002.lboard.expression.nodes.*;
 
 public class StringRecursionTreeBuilder implements TreeBuilder {
 
-	Map<String, Long> constants;
+	Map<String, Long> constants = new HashMap<>();
 
 	@Override
 	public void setConstants(Map<String, Long> constants) {
