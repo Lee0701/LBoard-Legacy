@@ -16,15 +16,11 @@ public class StringTreeExporter implements TreeExporter {
 			StringBuilder result = new StringBuilder();
 
 			public Object export() {
-				try {
-					export(node);
-				} catch(Exception e) {
-					return e;
-				}
+				export(node);
 				return result.toString();
 			}
 
-			public void export(TreeNode node) throws IOException {
+			public void export(TreeNode node) {
 				if (node instanceof ConstantTreeNode) {
 					result.append(((ConstantTreeNode) node).getValue());
 				} else if (node instanceof VariableTreeNode) {

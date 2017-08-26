@@ -1,5 +1,7 @@
 package me.blog.hgl1002.lboard.ime;
 
+import android.content.Context;
+
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -8,6 +10,7 @@ import java.util.HashMap;
 import java.util.Properties;
 
 import me.blog.hgl1002.lboard.LBoard;
+import me.blog.hgl1002.lboard.R;
 import me.blog.hgl1002.lboard.expression.StringRecursionTreeBuilder;
 import me.blog.hgl1002.lboard.expression.TreeBuilder;
 import me.blog.hgl1002.lboard.expression.TreeParser;
@@ -49,14 +52,17 @@ public class InternalInputMethodLoader implements InputMethodLoader {
 	public static final byte CG_UNICODE = 1;
 	public static final byte CG_BASIC = 2;
 
-	LBoard parent;
+	Context context;
 
-	public InternalInputMethodLoader(LBoard parent) {
-		this.parent = parent;
+	public InternalInputMethodLoader(Context context) {
+		this.context = context;
 	}
 
 	@Override
 	public LBoardInputMethod load(Object o) {
+		LBoard parent = null;
+		if(context instanceof LBoard) parent = (LBoard) context;
+
 		String name = "";
 		SoftKeyboard softKeyboard = null;
 		HardKeyboard hardKeyboard = null;
@@ -84,11 +90,11 @@ public class InternalInputMethodLoader implements InputMethodLoader {
 					DefaultSoftKeyboard defaultSoftKeyboard = new DefaultSoftKeyboard(parent);
 					Properties properties = new Properties();
 					properties.load(new FileInputStream(new File(file.getParentFile().getAbsolutePath(), FILENAME_DEFAULT_SOFT_DEF)));
-					String packageName = parent.getPackageName();
-					int main = parent.getResources().getIdentifier(properties.getProperty(KEY_DEFAULT_SOFT_MAIN), XML, packageName);
-					int mainShift = parent.getResources().getIdentifier(properties.getProperty(KEY_DEFAULT_SOFT_MAIN_SHIFT), XML, packageName);
-					int lower = parent.getResources().getIdentifier(properties.getProperty(KEY_DEFAULT_SOFT_LOWER), XML, packageName);
-					defaultSoftKeyboard.createKeyboards(parent, main, mainShift, lower);
+					String packageName = context.getPackageName();
+					int main = context.getResources().getIdentifier(properties.getProperty(KEY_DEFAULT_SOFT_MAIN), XML, packageName);
+					int mainShift = context.getResources().getIdentifier(properties.getProperty(KEY_DEFAULT_SOFT_MAIN_SHIFT), XML, packageName);
+					int lower = context.getResources().getIdentifier(properties.getProperty(KEY_DEFAULT_SOFT_LOWER), XML, packageName);
+					defaultSoftKeyboard.createKeyboards(context, main, mainShift, lower);
 					softKeyboard = defaultSoftKeyboard;
 					break;
 				}
