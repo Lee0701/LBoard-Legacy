@@ -266,7 +266,8 @@ public class StringRecursionTreeBuilder implements TreeBuilder {
 					else num = Long.parseLong(str.substring(startPos, this.pos));
 					x = new ConstantTreeNode(num);
 				} else if((ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z')) {
-					while((ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z')) nextChar();
+					while((ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z')
+							|| (ch >= '0' && ch <= '9') || ch == '_') nextChar();
 					String var = str.substring(startPos, this.pos);
 					if(constants.containsKey(var)) {
 						x = new ConstantTreeNode(constants.get(var));

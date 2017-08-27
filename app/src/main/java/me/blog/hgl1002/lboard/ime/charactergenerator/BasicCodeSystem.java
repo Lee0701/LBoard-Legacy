@@ -159,6 +159,11 @@ public class BasicCodeSystem implements CodeSystem {
 		put("_H", _H);
 	}};
 
+	public static final Map<Long, String> R_CONSTANTS = new HashMap<Long, String>() {{
+		for(String key : CONSTANTS.keySet()) {
+			put(CONSTANTS.get(key), key);
+		}
+	}};
 
 	public static char[] CHO_TABLE = {
 			'ㄱ', 'ㄲ', 'ㄴ', 'ㄷ', 'ㄸ',
@@ -217,11 +222,11 @@ public class BasicCodeSystem implements CodeSystem {
 	}
 
 	public static boolean isH3(long code) {
-		return (code & H3) != 0;
+		return (code & MASK_CODE_TYPE) == H3;
 	}
 
 	public static boolean isH2(long code) {
-		return (code & H2) != 0;
+		return (code & MASK_CODE_TYPE) == H2;
 	}
 
 	public static boolean hasCho(long code) {
