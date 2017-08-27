@@ -112,6 +112,8 @@ public class LBoard extends InputMethodService {
 
 	Animation slideUp, slideDown;
 
+	protected boolean sentenceUnitComposition = false;
+
 	private boolean inputted = false;
 	private boolean searchViewShown = false;
 	private String searchText = "", searchTextComposing = "";
@@ -395,6 +397,7 @@ public class LBoard extends InputMethodService {
 	}
 
 	public void updatePrediction() {
+		if(!sentenceUnitComposition) return;
 		WordChain chain = getWordChain(sentence, 0);
 		if(start && chain.get(chain.size()-1) != WordChain.START) {
 			Word[] start = new Word[] {WordChain.START, WordChain.START, WordChain.START};
@@ -415,6 +418,7 @@ public class LBoard extends InputMethodService {
 	}
 
 	public void updateCandidates() {
+		if(!sentenceUnitComposition) return;
 		String stroke = composingWordStroke + composingCharStroke;
 		dictionaryManager.searchCurrentWord(
 				currentInputMethod.getDictionaryName(),
@@ -424,7 +428,11 @@ public class LBoard extends InputMethodService {
 	}
 
 	public void updateInput() {
-		composeSentence(sentence, composingWord, composingChar);
+		if(sentenceUnitComposition) {
+			composeSentence(sentence, composingWord, composingChar);
+		} else {
+			getCurrentInputConnection().setComposingText(composingChar, 1);
+		}
 	}
 
 	public void updateInputView() {
@@ -561,31 +569,39 @@ public class LBoard extends InputMethodService {
 		if(event.getAction() == KeyEvent.ACTION_DOWN) {
 			switch (event.getKeyCode()) {
 			case KeyEvent.KEYCODE_SPACE:
-				commitComposingChar();
-				if(composingWord.isEmpty() && sentence.size() > 0) {
-					Word last = sentence.getLast();
-					if((last.getAttribute() & Sentence.ATTRIBUTE_SPACED) == 0) {
-						last.setAttribute(last.getAttribute() | Sentence.ATTRIBUTE_SPACED);
+				if(sentenceUnitComposition) {
+					commitComposingChar();
+					if (composingWord.isEmpty() && sentence.size() > 0) {
+						Word last = sentence.getLast();
+						if ((last.getAttribute() & Sentence.ATTRIBUTE_SPACED) == 0) {
+							last.setAttribute(last.getAttribute() | Sentence.ATTRIBUTE_SPACED);
+						}
+					} else if (!composingWord.isEmpty()) {
+						appendWord(composingWord, composingWordStroke, Sentence.ATTRIBUTE_SPACED);
 					}
-				} else if(!composingWord.isEmpty()) {
-					appendWord(composingWord, composingWordStroke, Sentence.ATTRIBUTE_SPACED);
+					clearComposing();
+					updateInput();
+					updatePrediction();
+					start = false;
+				} else {
+					return false;
 				}
-				clearComposing();
-				updateInput();
-				updatePrediction();
-				start = false;
 				return true;
 
 			case KeyEvent.KEYCODE_ENTER:
-				commitComposingChar();
-				if(!composingWord.isEmpty()) appendWord(composingWord, composingWordStroke);
-				clearComposing();
-				boolean learn = !isPasswordField();
-				commitSentence(sentence, learn);
-				startNewSentence(sentence);
-				updateInput();
-				updatePrediction();
-				start = true;
+				if(sentenceUnitComposition) {
+					commitComposingChar();
+					if (!composingWord.isEmpty()) appendWord(composingWord, composingWordStroke);
+					clearComposing();
+					boolean learn = !isPasswordField();
+					commitSentence(sentence, learn);
+					startNewSentence(sentence);
+					updateInput();
+					updatePrediction();
+					start = true;
+				} else {
+					return false;
+				}
 				break;
 
 			}
@@ -747,6 +763,13 @@ public class LBoard extends InputMethodService {
 	}
 
 	public void commitComposingChar() {
+		if(!sentenceUnitComposition) {
+			InputConnection ic = getCurrentInputConnection();
+			ic.setComposingText(composingChar, 1);
+			ic.finishComposingText();
+			composingChar = "";
+			return;
+		}
 		this.composingWord += composingChar;
 		this.composingChar = "";
 		if(composingWordStrokeHistory.isEmpty() || !composingWordStrokeHistory.peek().equals(composingWordStroke)) {
