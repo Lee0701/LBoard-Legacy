@@ -1,5 +1,8 @@
 package me.blog.hgl1002.lboard.ime.charactergenerator;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class BasicCodeSystem implements CodeSystem {
 
 	public static final long H3 = 0x0003000000000000L;
@@ -80,6 +83,81 @@ public class BasicCodeSystem implements CodeSystem {
 	public static final long _T = 0x0000000000000019L;
 	public static final long _P = 0x000000000000001aL;
 	public static final long _H = 0x000000000000001bL;
+
+	public static final Map<String, Long> CONSTANTS = new HashMap<String, Long>() {{
+		put("H3", H3);
+		put("H2", H2);
+
+		put("G_", G_);
+		put("GG_", GG_);
+		put("N_", N_);
+		put("D_", D_);
+		put("DD_", DD_);
+		put("R_", R_);
+		put("M_", M_);
+		put("B_", B_);
+		put("BB_", BB_);
+		put("S_", S_);
+		put("SS_", SS_);
+		put("Q_", Q_);
+		put("J_", J_);
+		put("JJ_", JJ_);
+		put("C_", C_);
+		put("K_", K_);
+		put("T_", T_);
+		put("P_", P_);
+		put("H_", H_);
+
+		put("A_", A_);
+		put("AE", AE);
+		put("YA", YA);
+		put("YAE", YAE);
+		put("EO", EO);
+		put("E_", E_);
+		put("YEO", YEO);
+		put("YE", YE);
+		put("O_", O_);
+		put("WA", WA);
+		put("WAE", WAE);
+		put("OI", OI);
+		put("YO", YO);
+		put("U_", U_);
+		put("UEO", UEO);
+		put("UE", UE);
+		put("WI", WI);
+		put("YU", YU);
+		put("EU", EU);
+		put("EUI", EUI);
+		put("I_", I_);
+
+		put("_G", _G);
+		put("_GG", _GG);
+		put("_GS", _GS);
+		put("_N", _N);
+		put("_NJ", _NJ);
+		put("_NH", _NH);
+		put("_D", _D);
+		put("_R", _R);
+		put("_RG", _RG);
+		put("_RM", _RM);
+		put("_RB", _RB);
+		put("_RS", _RS);
+		put("_RT", _RT);
+		put("_RP", _RP);
+		put("_RH", _RH);
+		put("_M", _M);
+		put("_B", _B);
+		put("_BS", _BS);
+		put("_S", _S);
+		put("_SS", _SS);
+		put("_Q", _Q);
+		put("_J", _J);
+		put("_C", _C);
+		put("_K", _K);
+		put("_T", _T);
+		put("_P", _P);
+		put("_H", _H);
+	}};
 
 
 	public static char[] CHO_TABLE = {
