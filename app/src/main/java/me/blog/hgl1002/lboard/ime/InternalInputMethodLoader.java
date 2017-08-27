@@ -29,6 +29,7 @@ public class InternalInputMethodLoader implements InputMethodLoader {
 
 	public static final String MAGIC_NUMBER = "LIME";
 
+	public static final String FILENAME_METHOD_DEF = "method.lime";
 	public static final String FILENAME_DEFAULT_SOFT_DEF = "soft_default.properties";
 	public static final String XML = "xml";
 	public static final String KEY_DEFAULT_SOFT_MAIN = "layout.main";
@@ -150,7 +151,12 @@ public class InternalInputMethodLoader implements InputMethodLoader {
 					}
 				}
 				System.out.println(characterGenerator);
+				String dict = "";
+				while((b = dis.readByte()) != 0) {
+					dict += new String(Character.toChars(b));
+				}
 				result = new LBoardInputMethod(name, softKeyboard, hardKeyboard, characterGenerator);
+				result.setDictionaryName(dict);
 			} catch (IOException e) {
 				e.printStackTrace();
 				return null;

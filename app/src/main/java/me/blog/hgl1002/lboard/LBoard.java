@@ -83,6 +83,8 @@ import me.blog.hgl1002.lboard.search.engines.GoogleWebSearchEngine;
 
 public class LBoard extends InputMethodService {
 
+	public static final String DIRNAME_METHODS = "methods";
+
 	public static final String DICTIONARY_KO = "ko";
 	public static final String DICTIONARY_EN = "en";
 
@@ -252,72 +254,20 @@ public class LBoard extends InputMethodService {
 
 	public void loadInputMethods() {
 		InputMethodLoader loader = new InternalInputMethodLoader(this);
-		File file = new File(getFilesDir(), "methods");
+		File file = new File(getFilesDir(), DIRNAME_METHODS);
 		if(true) {
-			try {
-				{
-					File qwerty = new File(file, "Qwerty");
-					qwerty.mkdirs();
-					File lime = new File(qwerty, "method.lime");
-					FileOutputStream fos = new FileOutputStream(lime);
-					DataOutputStream dos = new DataOutputStream(fos);
-					for(char c : InternalInputMethodLoader.MAGIC_NUMBER.toCharArray()) {
-						dos.writeByte((byte) c);
-					}
-					for(char c : "Qwerty".toCharArray()) {
-						dos.writeByte((byte) c);
-					}
-					dos.writeByte(0);
-					dos.writeByte(InternalInputMethodLoader.SOFT_DEFAULT);
-					dos.writeByte(InternalInputMethodLoader.HARD_DEFAULT);
-					dos.writeByte(InternalInputMethodLoader.CG_UNICODE);
-
-					Properties properties = new Properties();
-					properties.setProperty(InternalInputMethodLoader.KEY_DEFAULT_SOFT_MAIN, "keyboard_qwerty_4rows");
-					properties.setProperty(InternalInputMethodLoader.KEY_DEFAULT_SOFT_MAIN_SHIFT, "keyboard_qwerty_4rows");
-					properties.setProperty(InternalInputMethodLoader.KEY_DEFAULT_SOFT_LOWER, "keyboard_lower_default");
-					properties.store(new FileOutputStream(new File(qwerty, InternalInputMethodLoader.FILENAME_DEFAULT_SOFT_DEF)), "");
-
-					InputStream is = getResources().openRawResource(R.raw.layout_qwerty);
-					byte[] data = new byte[is.available()];
-					is.read(data);
-					fos = new FileOutputStream(new File(qwerty, InternalInputMethodLoader.FILENAME_DEFAULT_HARD));
-					fos.write(data);
-				}
-				{
-					File sebeolFinal = new File(file, "Sebeolsik Final");
-					sebeolFinal.mkdirs();
-					File lime = new File(sebeolFinal, "method.lime");
-					FileOutputStream fos = new FileOutputStream(lime);
-					DataOutputStream dos = new DataOutputStream(fos);
-					for(char c : InternalInputMethodLoader.MAGIC_NUMBER.toCharArray()) {
-						dos.writeByte((byte) c);
-					}
-					for(char c : "Sebeolsik Final".toCharArray()) {
-						dos.writeByte((byte) c);
-					}
-					dos.writeByte(0);
-					dos.writeByte(InternalInputMethodLoader.SOFT_DEFAULT);
-					dos.writeByte(InternalInputMethodLoader.HARD_BASIC);
-					dos.writeByte(InternalInputMethodLoader.CG_BASIC);
-
-					Properties properties = new Properties();
-					properties.setProperty(InternalInputMethodLoader.KEY_DEFAULT_SOFT_MAIN, "keyboard_full_10cols");
-					properties.setProperty(InternalInputMethodLoader.KEY_DEFAULT_SOFT_MAIN_SHIFT, "keyboard_full_10cols");
-					properties.setProperty(InternalInputMethodLoader.KEY_DEFAULT_SOFT_LOWER, "keyboard_lower_default");
-					properties.store(new FileOutputStream(new File(sebeolFinal, InternalInputMethodLoader.FILENAME_DEFAULT_SOFT_DEF)), "");
-
-					InputStream is = getResources().openRawResource(R.raw.layout_shin_1995);
-					byte[] data = new byte[is.available()];
-					is.read(data);
-					fos = new FileOutputStream(new File(sebeolFinal, InternalInputMethodLoader.FILENAME_BASIC_HARD));
-					fos.write(data);
-				}
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-
+			createDefaultMethods();
 		}
+
+		for(String fileName : file.list()) {
+			File dir = new File(file, fileName);
+			if(!dir.isDirectory()) continue;
+			File lime = new File(dir, InternalInputMethodLoader.FILENAME_METHOD_DEF);
+			if(!lime.exists()) continue;
+			LBoardInputMethod method = loader.load(lime);
+			method.getCharacterGenerator().setListener(characterGeneratorListener);
+		}
+
 		LBoardInputMethod qwerty = loader.load(new File(file, "Qwerty/method.lime"));
 		LBoardInputMethod sebeolFinal = loader.load(new File(file, "Sebeolsik Final/method.lime"));
 
@@ -330,6 +280,80 @@ public class LBoard extends InputMethodService {
 		inputMethods.add(sebeolFinal);
 		inputMethods.add(qwerty);
 
+	}
+
+	public void createDefaultMethods() {
+		try {
+			File file = new File(getFilesDir(), DIRNAME_METHODS);
+			{
+				File qwerty = new File(file, "Qwerty");
+				qwerty.mkdirs();
+				File lime = new File(qwerty, "method.lime");
+				FileOutputStream fos = new FileOutputStream(lime);
+				DataOutputStream dos = new DataOutputStream(fos);
+				for(char c : InternalInputMethodLoader.MAGIC_NUMBER.toCharArray()) {
+					dos.writeByte((byte) c);
+				}
+				for(char c : "Qwerty".toCharArray()) {
+					dos.writeByte((byte) c);
+				}
+				dos.writeByte(0);
+				dos.writeByte(InternalInputMethodLoader.SOFT_DEFAULT);
+				dos.writeByte(InternalInputMethodLoader.HARD_DEFAULT);
+				dos.writeByte(InternalInputMethodLoader.CG_UNICODE);
+				for(char c : DICTIONARY_EN.toCharArray()) {
+					dos.writeByte((byte) c);
+				}
+				dos.writeByte(0);
+
+				Properties properties = new Properties();
+				properties.setProperty(InternalInputMethodLoader.KEY_DEFAULT_SOFT_MAIN, "keyboard_qwerty_4rows");
+				properties.setProperty(InternalInputMethodLoader.KEY_DEFAULT_SOFT_MAIN_SHIFT, "keyboard_qwerty_4rows");
+				properties.setProperty(InternalInputMethodLoader.KEY_DEFAULT_SOFT_LOWER, "keyboard_lower_default");
+				properties.store(new FileOutputStream(new File(qwerty, InternalInputMethodLoader.FILENAME_DEFAULT_SOFT_DEF)), "");
+
+				InputStream is = getResources().openRawResource(R.raw.layout_qwerty);
+				byte[] data = new byte[is.available()];
+				is.read(data);
+				fos = new FileOutputStream(new File(qwerty, InternalInputMethodLoader.FILENAME_DEFAULT_HARD));
+				fos.write(data);
+			}
+			{
+				File sebeolFinal = new File(file, "Sebeolsik Final");
+				sebeolFinal.mkdirs();
+				File lime = new File(sebeolFinal, "method.lime");
+				FileOutputStream fos = new FileOutputStream(lime);
+				DataOutputStream dos = new DataOutputStream(fos);
+				for(char c : InternalInputMethodLoader.MAGIC_NUMBER.toCharArray()) {
+					dos.writeByte((byte) c);
+				}
+				for(char c : "Sebeolsik Final".toCharArray()) {
+					dos.writeByte((byte) c);
+				}
+				dos.writeByte(0);
+				dos.writeByte(InternalInputMethodLoader.SOFT_DEFAULT);
+				dos.writeByte(InternalInputMethodLoader.HARD_BASIC);
+				dos.writeByte(InternalInputMethodLoader.CG_BASIC);
+				for(char c : DICTIONARY_KO.toCharArray()) {
+					dos.writeByte((byte) c);
+				}
+				dos.writeByte(0);
+
+				Properties properties = new Properties();
+				properties.setProperty(InternalInputMethodLoader.KEY_DEFAULT_SOFT_MAIN, "keyboard_full_10cols");
+				properties.setProperty(InternalInputMethodLoader.KEY_DEFAULT_SOFT_MAIN_SHIFT, "keyboard_full_10cols");
+				properties.setProperty(InternalInputMethodLoader.KEY_DEFAULT_SOFT_LOWER, "keyboard_lower_default");
+				properties.store(new FileOutputStream(new File(sebeolFinal, InternalInputMethodLoader.FILENAME_DEFAULT_SOFT_DEF)), "");
+
+				InputStream is = getResources().openRawResource(R.raw.layout_shin_1995);
+				byte[] data = new byte[is.available()];
+				is.read(data);
+				fos = new FileOutputStream(new File(sebeolFinal, InternalInputMethodLoader.FILENAME_BASIC_HARD));
+				fos.write(data);
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 	@Override
