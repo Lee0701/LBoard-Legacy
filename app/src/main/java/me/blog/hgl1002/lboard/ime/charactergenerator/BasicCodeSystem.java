@@ -3,6 +3,8 @@ package me.blog.hgl1002.lboard.ime.charactergenerator;
 import java.util.HashMap;
 import java.util.Map;
 
+import me.blog.hgl1002.lboard.expression.StringTreeExporter;
+
 public class BasicCodeSystem implements CodeSystem {
 
 	public static final long H3 = 0x0003000000000000L;
@@ -158,6 +160,37 @@ public class BasicCodeSystem implements CodeSystem {
 		put("_P", _P);
 		put("_H", _H);
 	}};
+
+	public static final StringTreeExporter.ConstantHandler CONSTANT_HANDLER
+			= new StringTreeExporter.ConstantHandler() {
+		@Override
+		public String onConstant(long constant) {
+			String result = "0x" + Long.toHexString(constant);
+			if(isH3(constant)) result = "H3";
+			if(isH2(constant)) result = "H2";
+			if(isH3(constant) || isH2(constant)) {
+				if(hasCho(constant)) {
+					result += "|";
+					String cho = R_CONSTANTS.get(constant & MASK_CHO);
+					if(cho == null) result += "0x" + Long.toHexString(constant & MASK_CHO);
+					else result += cho;
+				}
+				if(hasJung(constant)) {
+					result += "|";
+					String jung = R_CONSTANTS.get(constant & MASK_JUNG);
+					if(jung == null) result += "0x" + Long.toHexString(constant & MASK_JUNG);
+					else result += jung;
+				}
+				if(hasJong(constant)) {
+					result += "|";
+					String jong = R_CONSTANTS.get(constant & MASK_JONG);
+					if(jong == null) result += "0x" + Long.toHexString(constant & MASK_JONG);
+					else result += jong;
+				}
+			}
+			return result;
+		}
+	};
 
 	public static final Map<Long, String> R_CONSTANTS = new HashMap<Long, String>() {{
 		for(String key : CONSTANTS.keySet()) {
