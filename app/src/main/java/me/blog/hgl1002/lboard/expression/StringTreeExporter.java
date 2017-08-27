@@ -1,6 +1,5 @@
 package me.blog.hgl1002.lboard.expression;
 
-import java.io.IOException;
 import java.util.List;
 
 import me.blog.hgl1002.lboard.expression.nodes.*;
@@ -8,6 +7,16 @@ import me.blog.hgl1002.lboard.expression.nodes.*;
 import static me.blog.hgl1002.lboard.expression.nodes.Operator.*;
 
 public class StringTreeExporter implements TreeExporter {
+
+	protected ConstantHandler constantHandler;
+
+	public ConstantHandler getConstantHandler() {
+		return constantHandler;
+	}
+
+	public void setConstantHandler(ConstantHandler constantHandler) {
+		this.constantHandler = constantHandler;
+	}
 
 	@Override
 	public Object export(final TreeNode node) {
@@ -22,7 +31,9 @@ public class StringTreeExporter implements TreeExporter {
 
 			public void export(TreeNode node) {
 				if (node instanceof ConstantTreeNode) {
-					result.append(((ConstantTreeNode) node).getValue());
+					long value = ((ConstantTreeNode) node).getValue();
+					if(constantHandler != null) result.append(constantHandler.onConstant(value));
+					else result.append(value);
 				} else if (node instanceof VariableTreeNode) {
 					result.append(((VariableTreeNode) node).getName());
 				} else if (node instanceof UnaryTreeNode) {
@@ -225,6 +236,10 @@ public class StringTreeExporter implements TreeExporter {
 			}
 
 		}.export();
+	}
+
+	public static interface ConstantHandler {
+		public String onConstant(long constant);
 	}
 
 }
