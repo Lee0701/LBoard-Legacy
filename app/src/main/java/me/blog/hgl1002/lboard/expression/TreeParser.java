@@ -192,10 +192,10 @@ public class TreeParser {
 			return left ^ right;
 
 		case LOGICAL_AND:
-			return ((left & right) == 0) ? 0 : 1;
+			return (left != 0 && right != 0) ? 1 : 0;
 
 		case LOGICAL_OR:
-			return ((left | right) == 0) ? 0 : 1;
+			return (left != 0 || right != 0) ? 1 : 0;
 
 		default:
 			throw new RuntimeException("Unsupported operator for binary operation.");
