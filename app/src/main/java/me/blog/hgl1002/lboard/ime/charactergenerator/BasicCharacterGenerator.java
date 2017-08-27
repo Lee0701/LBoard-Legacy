@@ -7,6 +7,7 @@ import java.util.Stack;
 import me.blog.hgl1002.lboard.expression.TreeParser;
 import me.blog.hgl1002.lboard.ime.charactergenerator.basic.AutomataRule;
 import me.blog.hgl1002.lboard.ime.charactergenerator.basic.AutomataTable;
+import me.blog.hgl1002.lboard.ime.charactergenerator.basic.CombinationTable;
 
 import static me.blog.hgl1002.lboard.ime.charactergenerator.BasicCodeSystem.*;
 
@@ -19,6 +20,7 @@ public class BasicCharacterGenerator implements CharacterGenerator {
 	protected State currentState;
 	protected Stack<State> previousStates;
 
+	protected CombinationTable combinationTable;
 	protected AutomataTable automataTable;
 
 	protected static class State implements Cloneable {
@@ -184,6 +186,14 @@ public class BasicCharacterGenerator implements CharacterGenerator {
 
 	public void setCurrentState(State currentState) {
 		this.currentState = currentState;
+	}
+
+	public CombinationTable getCombinationTable() {
+		return combinationTable;
+	}
+
+	public void setCombinationTable(CombinationTable combinationTable) {
+		this.combinationTable = combinationTable;
 	}
 
 	public AutomataTable getAutomataTable() {

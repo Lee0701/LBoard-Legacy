@@ -1,9 +1,14 @@
 package me.blog.hgl1002.lboard.ime.charactergenerator.basic;
 
+import java.io.DataInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
 public class CombinationTable {
+
+	public static final String MAGIC_NUMBER = "LCOM2";
 
 	protected List<Combination> choCombination;
 	protected List<Combination> jungCombination;
@@ -52,6 +57,43 @@ public class CombinationTable {
 
 	public List<Combination> getAllJong() {
 		return jongCombination;
+	}
+
+	public static CombinationTable load(InputStream in) throws IOException {
+		DataInputStream dis;
+		if(in instanceof DataInputStream) dis = (DataInputStream) in;
+		else dis = new DataInputStream(in);
+
+		CombinationTable combinations = new CombinationTable();
+
+		for(char c : MAGIC_NUMBER.toCharArray()) {
+			char d = (char) dis.readByte();
+			if(d != c) throw new RuntimeException("Combination file must start with String \"" + MAGIC_NUMBER + "\"!");
+		}
+		for(int i = MAGIC_NUMBER.length() ; i < 0x10 ; i++) {
+			dis.readByte();
+		}
+		while(dis.available() >= 8) {
+			int type = dis.readShort();
+			int a = dis.readShort();
+			int b = dis.readShort();
+			int result = dis.readShort();
+			switch(type) {
+			case Combination.TYPE_CHO:
+				combinations.choCombination.add(new Combination(type, a, b, result));
+				break;
+
+			case Combination.TYPE_JUNG:
+				combinations.jungCombination.add(new Combination(type, a, b, result));
+				break;
+
+			case Combination.TYPE_JONG:
+				combinations.jongCombination.add(new Combination(type, a, b, result));
+				break;
+			}
+		}
+
+		return combinations;
 	}
 
 }

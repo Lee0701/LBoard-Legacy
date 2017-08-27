@@ -5,6 +5,7 @@ import android.content.Context;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Properties;
@@ -19,6 +20,7 @@ import me.blog.hgl1002.lboard.ime.charactergenerator.CharacterGenerator;
 import me.blog.hgl1002.lboard.ime.charactergenerator.UnicodeCharacterGenerator;
 import me.blog.hgl1002.lboard.ime.charactergenerator.basic.AutomataRule;
 import me.blog.hgl1002.lboard.ime.charactergenerator.basic.AutomataTable;
+import me.blog.hgl1002.lboard.ime.charactergenerator.basic.CombinationTable;
 import me.blog.hgl1002.lboard.ime.hardkeyboard.BasicHardKeyboard;
 import me.blog.hgl1002.lboard.ime.hardkeyboard.DefaultHardKeyboard;
 import me.blog.hgl1002.lboard.ime.hardkeyboard.lhkb.LHKB1;
@@ -38,6 +40,8 @@ public class InternalInputMethodLoader implements InputMethodLoader {
 
 	public static final String FILENAME_DEFAULT_HARD = "hard_default.lhkb";
 	public static final String FILENAME_BASIC_HARD = "hard_basic.lhkb";
+
+	public static final String FILENAME_COMBINATION = "hard_combinations.lcom";
 
 	public static final byte SOFT_BLANK = 0;
 	public static final byte SOFT_DEFAULT = 1;
@@ -106,7 +110,8 @@ public class InternalInputMethodLoader implements InputMethodLoader {
 				switch(b) {
 				case HARD_DEFAULT: {
 					DefaultHardKeyboard defaultHardKeyboard = new DefaultHardKeyboard(parent);
-					defaultHardKeyboard.setMappings(LHKB1.loadMappings(new FileInputStream(new File(file.getParentFile(), FILENAME_DEFAULT_HARD))));
+					defaultHardKeyboard.setMappings(LHKB1.loadMappings(
+							new FileInputStream(new File(file.getParentFile(), FILENAME_DEFAULT_HARD))));
 					hardKeyboard = defaultHardKeyboard;
 					generator = true;
 					break;
@@ -114,7 +119,8 @@ public class InternalInputMethodLoader implements InputMethodLoader {
 				case HARD_BASIC: {
 					BasicHardKeyboard basicHardKeyboard = new BasicHardKeyboard(parent);
 					basicHardKeyboard.setParser(parser);
-					basicHardKeyboard.setMappings(LHKB2.loadMappings(new FileInputStream(new File(file.getParentFile(), FILENAME_BASIC_HARD))));
+					basicHardKeyboard.setMappings(LHKB2.loadMappings(
+							new FileInputStream(new File(file.getParentFile(), FILENAME_BASIC_HARD))));
 					hardKeyboard = basicHardKeyboard;
 					generator = true;
 					break;
@@ -126,11 +132,23 @@ public class InternalInputMethodLoader implements InputMethodLoader {
 					switch (b) {
 					case CG_UNICODE: {
 						UnicodeCharacterGenerator unicodeCharacterGenerator = new UnicodeCharacterGenerator();
+						try {
+							int[][] combinationTable = UnicodeCharacterGenerator.loadCombinationTable(
+									new FileInputStream(new File(file.getParentFile(), FILENAME_COMBINATION)));
+							unicodeCharacterGenerator.setCombinationTable(combinationTable);
+						} catch (FileNotFoundException e) {
+						}
 						characterGenerator = unicodeCharacterGenerator;
 						break;
 					}
 					case CG_BASIC: {
 						BasicCharacterGenerator basicCharacterGenerator = new BasicCharacterGenerator(parser);
+						try {
+							CombinationTable combinationTable = CombinationTable.load(
+									new FileInputStream(new File(file.getParentFile(), FILENAME_COMBINATION)));
+							basicCharacterGenerator.setCombinationTable(combinationTable);
+						} catch (FileNotFoundException e) {
+						}
 						// Temporary code for testing.
 						TreeBuilder builder = new StringRecursionTreeBuilder();
 						builder.setConstants(new HashMap<String, Long>());

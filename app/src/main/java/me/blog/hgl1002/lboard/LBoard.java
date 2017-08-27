@@ -350,6 +350,12 @@ public class LBoard extends InputMethodService {
 				is.read(data);
 				fos = new FileOutputStream(new File(sebeolFinal, InternalInputMethodLoader.FILENAME_BASIC_HARD));
 				fos.write(data);
+
+				is = getResources().openRawResource(R.raw.comb_sebeol_3);
+				data = new byte[is.available()];
+				is.read(data);
+				fos = new FileOutputStream(new File(sebeolFinal, InternalInputMethodLoader.FILENAME_COMBINATION));
+				fos.write(data);
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
