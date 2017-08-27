@@ -82,6 +82,7 @@ public class BasicCharacterGenerator implements CharacterGenerator {
 						cho = combination.getResult();
 					} else {
 						combinationFailed();
+						syllable = 0;
 					}
 				}
 				syllable &= ~MASK_CHO;
@@ -94,6 +95,7 @@ public class BasicCharacterGenerator implements CharacterGenerator {
 						jung = combination.getResult();
 					} else {
 						combinationFailed();
+						syllable = 0;
 					}
 				}
 				syllable &= ~MASK_JUNG;
@@ -106,6 +108,7 @@ public class BasicCharacterGenerator implements CharacterGenerator {
 						jong = combination.getResult();
 					} else {
 						combinationFailed();
+						syllable = 0;
 					}
 				}
 				syllable &= ~MASK_JONG;
@@ -145,6 +148,8 @@ public class BasicCharacterGenerator implements CharacterGenerator {
 			resetComposing();
 			previousStates.push(currentState);
 			currentState = (State) currentState.clone();
+			currentState.cho = currentState.jung = currentState.jong = 0;
+			currentState.syllable = 0;
 			currentState.status = parser.parse(automata.getTargetState());
 		}
 	}
