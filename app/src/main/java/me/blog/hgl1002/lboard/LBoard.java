@@ -253,7 +253,7 @@ public class LBoard extends InputMethodService {
 	public void loadInputMethods() {
 		InputMethodLoader loader = new InternalInputMethodLoader(this);
 		File file = new File(getFilesDir(), "methods");
-		if(!file.exists()) {
+		if(true) {
 			try {
 				{
 					File qwerty = new File(file, "Qwerty");
@@ -307,7 +307,7 @@ public class LBoard extends InputMethodService {
 					properties.setProperty(InternalInputMethodLoader.KEY_DEFAULT_SOFT_LOWER, "keyboard_lower_default");
 					properties.store(new FileOutputStream(new File(sebeolFinal, InternalInputMethodLoader.FILENAME_DEFAULT_SOFT_DEF)), "");
 
-					InputStream is = getResources().openRawResource(R.raw.layout_sebeol_final_3);
+					InputStream is = getResources().openRawResource(R.raw.layout_shin_1995);
 					byte[] data = new byte[is.available()];
 					is.read(data);
 					fos = new FileOutputStream(new File(sebeolFinal, InternalInputMethodLoader.FILENAME_BASIC_HARD));

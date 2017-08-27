@@ -25,9 +25,11 @@ public class BinaryTreeExporter implements TreeExporter {
 	private Object export(final TreeNode node, final OutputStream out) {
 		return new Object() {
 
-			DataOutputStream dos = new DataOutputStream(out);
+			DataOutputStream dos;
 
 			public Object export() {
+				if(out instanceof DataOutputStream) dos = (DataOutputStream) out;
+				else dos = new DataOutputStream(out);
 				try {
 					export(node);
 				} catch(Exception e) {
