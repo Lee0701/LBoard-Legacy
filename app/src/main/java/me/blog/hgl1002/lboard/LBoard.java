@@ -731,23 +731,27 @@ public class LBoard extends InputMethodService {
 					break;
 
 				default:
-					if(sentenceStops.contains(text)) {
-						commitComposingChar();
-						appendWord(composingWord, composingWordStroke, 0);
-						clearComposing();
-						composingWord += text;
-						composingWordStroke += text;
-						appendWord(composingWord, composingWordStroke, 0);
-						clearComposing();
-						updateInput();
-						start = true;
-						updatePrediction();
+					if(sentenceUnitComposition) {
+						if(sentenceStops.contains(text)) {
+							commitComposingChar();
+							appendWord(composingWord, composingWordStroke, 0);
+							clearComposing();
+							composingWord += text;
+							composingWordStroke += text;
+							appendWord(composingWord, composingWordStroke, 0);
+							clearComposing();
+							updateInput();
+							start = true;
+							updatePrediction();
+						} else {
+							composingWordStrokeHistory.push(composingWordStroke);
+							composingWord += text;
+							composingWordStroke += text;
+							updateInput();
+							updateCandidates();
+						}
 					} else {
-						composingWordStrokeHistory.push(composingWordStroke);
-						composingWord += text;
-						composingWordStroke += text;
-						updateInput();
-						updateCandidates();
+						getCurrentInputConnection().commitText(text, 1);
 					}
 				}
 				break;
