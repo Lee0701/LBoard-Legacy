@@ -26,6 +26,7 @@ public class StringRecursionTreeBuilder implements TreeBuilder {
 				if(c >= '0' && c <= '9') return false;
 				if(c >= 'A' && c <= 'Z') return false;
 				if(c >= 'a' && c <= 'z') return false;
+				if(c == '_') return false;
 				if(c == '(' || c == ')') return false;
 				return true;
 			}
@@ -265,7 +266,7 @@ public class StringRecursionTreeBuilder implements TreeBuilder {
 					if(hex) num = Long.parseLong(str.substring(startPos, this.pos), 16);
 					else num = Long.parseLong(str.substring(startPos, this.pos));
 					x = new ConstantTreeNode(num);
-				} else if((ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z')) {
+				} else if((ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z') || ch == '_') {
 					while((ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z')
 							|| (ch >= '0' && ch <= '9') || ch == '_') nextChar();
 					String var = str.substring(startPos, this.pos);

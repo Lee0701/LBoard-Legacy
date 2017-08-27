@@ -34,7 +34,7 @@ public class ExpressionTest {
 		long startTime;
 		startTime = System.currentTimeMillis();
 //		TreeNode node = builder.build("a = ((a = 2) + (a * (a += 2)) + a * 3)");
-		TreeNode node = builder.build("H3|J_");
+		TreeNode node = builder.build("H3|_J");
 		System.out.println("Build finished in: " + (System.currentTimeMillis() - startTime) + " ms.");
 
 		startTime = System.currentTimeMillis();
