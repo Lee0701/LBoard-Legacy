@@ -42,7 +42,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 import java.util.Stack;
@@ -57,23 +56,12 @@ import me.blog.hgl1002.lboard.engine.SQLiteDictionary;
 import me.blog.hgl1002.lboard.engine.Sentence;
 import me.blog.hgl1002.lboard.engine.Word;
 import me.blog.hgl1002.lboard.engine.WordChain;
-import me.blog.hgl1002.lboard.expression.StringRecursionTreeBuilder;
-import me.blog.hgl1002.lboard.expression.TreeBuilder;
 import me.blog.hgl1002.lboard.ime.InputMethodLoader;
 import me.blog.hgl1002.lboard.ime.InternalInputMethodLoader;
 import me.blog.hgl1002.lboard.ime.LBoardInputMethod;
-import me.blog.hgl1002.lboard.ime.charactergenerator.BasicCharacterGenerator;
 import me.blog.hgl1002.lboard.ime.charactergenerator.CharacterGenerator;
-import me.blog.hgl1002.lboard.ime.charactergenerator.UnicodeCharacterGenerator;
-import me.blog.hgl1002.lboard.ime.charactergenerator.basic.AutomataRule;
-import me.blog.hgl1002.lboard.ime.charactergenerator.basic.AutomataTable;
-import me.blog.hgl1002.lboard.ime.hardkeyboard.BasicHardKeyboard;
-import me.blog.hgl1002.lboard.ime.hardkeyboard.lhkb.LHKB1;
-import me.blog.hgl1002.lboard.ime.hardkeyboard.lhkb.LHKB2;
-import me.blog.hgl1002.lboard.ime.softkeyboard.DefaultSoftKeyboard;
 
 import me.blog.hgl1002.lboard.ime.KeyEventInfo;
-import me.blog.hgl1002.lboard.ime.hardkeyboard.DefaultHardKeyboard;
 import me.blog.hgl1002.lboard.search.DefaultSearchViewManager;
 import me.blog.hgl1002.lboard.search.SearchEngine;
 import me.blog.hgl1002.lboard.search.SearchViewManager;
@@ -351,10 +339,16 @@ public class LBoard extends InputMethodService {
 				fos = new FileOutputStream(new File(sebeolFinal, InternalInputMethodLoader.FILENAME_BASIC_HARD));
 				fos.write(data);
 
-				is = getResources().openRawResource(R.raw.comb_sebeol_3);
+				is = getResources().openRawResource(R.raw.comb_shin_3);
 				data = new byte[is.available()];
 				is.read(data);
 				fos = new FileOutputStream(new File(sebeolFinal, InternalInputMethodLoader.FILENAME_COMBINATION));
+				fos.write(data);
+
+				is = getResources().openRawResource(R.raw.virtual_shin);
+				data = new byte[is.available()];
+				is.read(data);
+				fos = new FileOutputStream(new File(sebeolFinal, InternalInputMethodLoader.FILENAME_VIRTUAL));
 				fos.write(data);
 			}
 		} catch (IOException e) {

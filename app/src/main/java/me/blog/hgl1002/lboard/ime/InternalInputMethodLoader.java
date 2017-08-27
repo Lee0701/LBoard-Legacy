@@ -21,6 +21,7 @@ import me.blog.hgl1002.lboard.ime.charactergenerator.UnicodeCharacterGenerator;
 import me.blog.hgl1002.lboard.ime.charactergenerator.basic.AutomataRule;
 import me.blog.hgl1002.lboard.ime.charactergenerator.basic.AutomataTable;
 import me.blog.hgl1002.lboard.ime.charactergenerator.basic.CombinationTable;
+import me.blog.hgl1002.lboard.ime.charactergenerator.basic.VirtualJamoTable;
 import me.blog.hgl1002.lboard.ime.hardkeyboard.BasicHardKeyboard;
 import me.blog.hgl1002.lboard.ime.hardkeyboard.DefaultHardKeyboard;
 import me.blog.hgl1002.lboard.ime.hardkeyboard.lhkb.LHKB1;
@@ -42,6 +43,7 @@ public class InternalInputMethodLoader implements InputMethodLoader {
 	public static final String FILENAME_BASIC_HARD = "hard_basic.lhkb";
 
 	public static final String FILENAME_COMBINATION = "hard_combinations.lcom";
+	public static final String FILENAME_VIRTUAL = "hard_virtuals.lvjt";
 
 	public static final byte SOFT_BLANK = 0;
 	public static final byte SOFT_DEFAULT = 1;
@@ -147,6 +149,12 @@ public class InternalInputMethodLoader implements InputMethodLoader {
 							CombinationTable combinationTable = CombinationTable.load(
 									new FileInputStream(new File(file.getParentFile(), FILENAME_COMBINATION)));
 							basicCharacterGenerator.setCombinationTable(combinationTable);
+						} catch (FileNotFoundException e) {
+						}
+						try {
+							VirtualJamoTable virtualJamoTable = VirtualJamoTable.load(
+									new FileInputStream(new File(file.getParentFile(), FILENAME_VIRTUAL)));
+							basicCharacterGenerator.setVirtualJamoTable(virtualJamoTable);
 						} catch (FileNotFoundException e) {
 						}
 						// Temporary code for testing.

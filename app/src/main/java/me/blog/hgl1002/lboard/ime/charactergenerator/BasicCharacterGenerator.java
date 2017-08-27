@@ -9,6 +9,7 @@ import me.blog.hgl1002.lboard.ime.charactergenerator.basic.AutomataRule;
 import me.blog.hgl1002.lboard.ime.charactergenerator.basic.AutomataTable;
 import me.blog.hgl1002.lboard.ime.charactergenerator.basic.Combination;
 import me.blog.hgl1002.lboard.ime.charactergenerator.basic.CombinationTable;
+import me.blog.hgl1002.lboard.ime.charactergenerator.basic.VirtualJamoTable;
 
 import static me.blog.hgl1002.lboard.ime.charactergenerator.BasicCodeSystem.*;
 
@@ -22,6 +23,7 @@ public class BasicCharacterGenerator implements CharacterGenerator {
 	protected Stack<State> previousStates;
 
 	protected CombinationTable combinationTable;
+	protected VirtualJamoTable virtualJamoTable;
 	protected AutomataTable automataTable;
 
 	protected static class State implements Cloneable {
@@ -230,6 +232,14 @@ public class BasicCharacterGenerator implements CharacterGenerator {
 
 	public void setCombinationTable(CombinationTable combinationTable) {
 		this.combinationTable = combinationTable;
+	}
+
+	public VirtualJamoTable getVirtualJamoTable() {
+		return virtualJamoTable;
+	}
+
+	public void setVirtualJamoTable(VirtualJamoTable virtualJamoTable) {
+		this.virtualJamoTable = virtualJamoTable;
 	}
 
 	public AutomataTable getAutomataTable() {
