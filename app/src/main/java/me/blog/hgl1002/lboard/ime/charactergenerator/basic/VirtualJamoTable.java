@@ -29,7 +29,7 @@ public class VirtualJamoTable {
 		return null;
 	}
 
-	public VirtualJamo getJung(int a, int b) {
+	public VirtualJamo getJung(int a) {
 		for(VirtualJamo item : jungVirtuals) {
 			if(item.a == a) {
 				return item;
@@ -38,7 +38,7 @@ public class VirtualJamoTable {
 		return null;
 	}
 
-	public VirtualJamo getJong(int a, int b) {
+	public VirtualJamo getJong(int a) {
 		for(VirtualJamo item : jongVirtuals) {
 			if(item.a == a) {
 				return item;

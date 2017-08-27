@@ -9,6 +9,7 @@ import me.blog.hgl1002.lboard.ime.charactergenerator.basic.AutomataRule;
 import me.blog.hgl1002.lboard.ime.charactergenerator.basic.AutomataTable;
 import me.blog.hgl1002.lboard.ime.charactergenerator.basic.Combination;
 import me.blog.hgl1002.lboard.ime.charactergenerator.basic.CombinationTable;
+import me.blog.hgl1002.lboard.ime.charactergenerator.basic.VirtualJamo;
 import me.blog.hgl1002.lboard.ime.charactergenerator.basic.VirtualJamoTable;
 
 import static me.blog.hgl1002.lboard.ime.charactergenerator.BasicCodeSystem.*;
@@ -123,7 +124,7 @@ public class BasicCharacterGenerator implements CharacterGenerator {
 			syllable = (syllable & ~MASK_CODE_TYPE) | H3;
 			currentState.syllable = syllable;
 
-			String composing = convertToUnicode(currentState.syllable);
+			String composing = convertToUnicode(replaceVirtuals(currentState.syllable));
 			if(listener != null) listener.onCompose(this, composing);
 			return true;
 		}
@@ -171,7 +172,7 @@ public class BasicCharacterGenerator implements CharacterGenerator {
 			return false;
 		} else {
 			currentState = previousStates.pop();
-			String composing = convertToUnicode(currentState.syllable);
+			String composing = convertToUnicode(replaceVirtuals(currentState.syllable));
 			if(currentState.syllable == 0) composing = "";
 			if(listener != null) listener.onCompose(this, composing);
 			return true;
@@ -198,6 +199,37 @@ public class BasicCharacterGenerator implements CharacterGenerator {
 		variables.put("F", (long) currentState.jong);
 		variables.put("T", currentState.status);
 		return variables;
+	}
+
+	public long replaceVirtuals(long syllable) {
+		if(virtualJamoTable == null) return syllable;
+		long result = 0;
+		result |= syllable & MASK_CODE_TYPE;
+		if (hasCho(syllable)) {
+			VirtualJamo virtual = virtualJamoTable.getCho(getCho(syllable));
+			if(virtual != null) {
+				result |= fromCho(virtual.getResult());
+			} else {
+				result |= syllable & MASK_CHO;
+			}
+		}
+		if(hasJung(syllable)) {
+			VirtualJamo virtual = virtualJamoTable.getJung(getJung(syllable));
+			if(virtual != null) {
+				result |= fromJung(virtual.getResult());
+			} else {
+				result |= syllable & MASK_JUNG;
+			}
+		}
+		if(hasJong(syllable)) {
+			VirtualJamo virtual = virtualJamoTable.getJong(getJong(syllable));
+			if(virtual != null) {
+				result |= fromJong(virtual.getResult());
+			} else {
+				result |= syllable & MASK_JONG;
+			}
+		}
+		return result;
 	}
 
 	@Override
