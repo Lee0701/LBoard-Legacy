@@ -7,6 +7,7 @@ import java.util.Stack;
 import me.blog.hgl1002.lboard.expression.TreeParser;
 import me.blog.hgl1002.lboard.ime.charactergenerator.basic.AutomataRule;
 import me.blog.hgl1002.lboard.ime.charactergenerator.basic.AutomataTable;
+import me.blog.hgl1002.lboard.ime.charactergenerator.basic.Combination;
 import me.blog.hgl1002.lboard.ime.charactergenerator.basic.CombinationTable;
 
 import static me.blog.hgl1002.lboard.ime.charactergenerator.BasicCodeSystem.*;
@@ -71,24 +72,41 @@ public class BasicCharacterGenerator implements CharacterGenerator {
 				currentState.iJong = jong;
 			}
 
-			processAutomata();
+			processNormalAutomata();
 
 			long syllable = currentState.syllable;
 			if(cho != 0) {
 				if(currentState.cho != 0) {
-					// TODO: try to combine jamo.
+					Combination combination = combinationTable.getCho(currentState.cho, currentState.iCho);
+					if(combination != null) {
+						cho = combination.getResult();
+					} else {
+						combinationFailed();
+					}
 				}
 				syllable &= ~MASK_CHO;
 				syllable |= fromCho(cho);
 			}
 			if(jung != 0) {
 				if(currentState.jung != 0) {
+					Combination combination = combinationTable.getJung(currentState.jung, currentState.iJung);
+					if(combination != null) {
+						jung = combination.getResult();
+					} else {
+						combinationFailed();
+					}
 				}
 				syllable &= ~MASK_JUNG;
 				syllable |= fromJung(jung);
 			}
 			if(jong != 0) {
 				if(currentState.jong != 0) {
+					Combination combination = combinationTable.getJong(currentState.jong, currentState.iJong);
+					if(combination != null) {
+						jong = combination.getResult();
+					} else {
+						combinationFailed();
+					}
 				}
 				syllable &= ~MASK_JONG;
 				syllable |= fromJong(jong);
@@ -107,13 +125,17 @@ public class BasicCharacterGenerator implements CharacterGenerator {
 		return false;
 	}
 
-	public void processAutomata() {
-		AutomataRule automata = automataTable.get(currentState.status);
+	public void processNormalAutomata() {
 		Map<String, Long> variables = getVariables();
 		variables.put("A", (long) currentState.iCho);
 		variables.put("B", (long) currentState.iJung);
 		variables.put("C", (long) currentState.iJong);
 		variables.put("T", 0L);
+		processAutomata(variables);
+	}
+
+	public void processAutomata(Map<String, Long> variables) {
+		AutomataRule automata = automataTable.get(currentState.status);
 		parser.setVariables(variables);
 		long result = parser.parse(automata.getTargetState());
 		currentState.status = result;
@@ -125,6 +147,15 @@ public class BasicCharacterGenerator implements CharacterGenerator {
 			currentState = (State) currentState.clone();
 			currentState.status = parser.parse(automata.getTargetState());
 		}
+	}
+
+	public void combinationFailed() {
+		Map<String, Long> variables = getVariables();
+		variables.put("I", (long) currentState.iCho);
+		variables.put("J", (long) currentState.iJung);
+		variables.put("K", (long) currentState.iJong);
+		variables.put("T", 1L);
+		processAutomata(variables);
 	}
 
 	@Override
