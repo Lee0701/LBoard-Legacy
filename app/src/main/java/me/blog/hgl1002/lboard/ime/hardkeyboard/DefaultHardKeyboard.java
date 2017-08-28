@@ -12,11 +12,13 @@ import java.nio.ByteBuffer;
 import me.blog.hgl1002.lboard.LBoard;
 import me.blog.hgl1002.lboard.ime.HardKeyboard;
 import me.blog.hgl1002.lboard.ime.KeyEventInfo;
+import me.blog.hgl1002.lboard.ime.LBoardInputMethod;
 import me.blog.hgl1002.lboard.ime.charactergenerator.CharacterGenerator;
 
 public class DefaultHardKeyboard implements HardKeyboard {
 
 	protected LBoard parent;
+	protected LBoardInputMethod method;
 
 	protected long[][] mappings;
 
@@ -128,6 +130,11 @@ public class DefaultHardKeyboard implements HardKeyboard {
 
 	public void setMappings(long[][] mappings) {
 		this.mappings = mappings;
+	}
+
+	@Override
+	public void setMethod(LBoardInputMethod method) {
+		this.method = method;
 	}
 
 	public CharacterGenerator getCharacterGenerator() {

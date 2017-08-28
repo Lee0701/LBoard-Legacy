@@ -7,10 +7,12 @@ import android.view.inputmethod.EditorInfo;
 import me.blog.hgl1002.lboard.LBoard;
 import me.blog.hgl1002.lboard.ime.HardKeyboard;
 import me.blog.hgl1002.lboard.ime.KeyEventInfo;
+import me.blog.hgl1002.lboard.ime.LBoardInputMethod;
 
 public class EmptyHardKeyboard implements HardKeyboard {
 
 	protected LBoard parent;
+	protected LBoardInputMethod method;
 
 	protected boolean shiftPressing;
 
@@ -58,5 +60,10 @@ public class EmptyHardKeyboard implements HardKeyboard {
 	@Override
 	public void closing() {
 
+	}
+
+	@Override
+	public void setMethod(LBoardInputMethod method) {
+		this.method = method;
 	}
 }

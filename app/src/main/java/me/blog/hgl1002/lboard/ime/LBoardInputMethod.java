@@ -16,7 +16,7 @@ public class LBoardInputMethod {
 		this.softKeyboard = softKeyboard;
 		this.hardKeyboard = hardKeyboard;
 		this.characterGenerator = characterGenerator;
-
+		hardKeyboard.setMethod(this);
 	}
 
 	public String getName() {

@@ -11,11 +11,13 @@ import me.blog.hgl1002.lboard.expression.TreeParser;
 import me.blog.hgl1002.lboard.expression.nodes.TreeNode;
 import me.blog.hgl1002.lboard.ime.HardKeyboard;
 import me.blog.hgl1002.lboard.ime.KeyEventInfo;
+import me.blog.hgl1002.lboard.ime.LBoardInputMethod;
 import me.blog.hgl1002.lboard.ime.charactergenerator.CharacterGenerator;
 
 public class BasicHardKeyboard implements HardKeyboard {
 
 	protected LBoard parent;
+	protected LBoardInputMethod method;
 
 	protected TreeParser parser;
 
@@ -142,6 +144,11 @@ public class BasicHardKeyboard implements HardKeyboard {
 
 	public void setCharacterGenerator(CharacterGenerator characterGenerator) {
 		this.characterGenerator = characterGenerator;
+	}
+
+	@Override
+	public void setMethod(LBoardInputMethod method) {
+		this.method = method;
 	}
 
 	public TreeParser getParser() {

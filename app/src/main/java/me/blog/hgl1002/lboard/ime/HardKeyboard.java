@@ -34,4 +34,6 @@ public interface HardKeyboard {
 	 */
 	public void closing();
 
+	public void setMethod(LBoardInputMethod method);
+
 }
