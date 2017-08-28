@@ -256,19 +256,8 @@ public class LBoard extends InputMethodService {
 			if(!lime.exists()) continue;
 			LBoardInputMethod method = loader.load(lime);
 			method.getCharacterGenerator().setListener(characterGeneratorListener);
+			inputMethods.add(method);
 		}
-
-		LBoardInputMethod qwerty = loader.load(new File(file, "Qwerty/method.lime"));
-		LBoardInputMethod sebeolFinal = loader.load(new File(file, "Sebeolsik Final/method.lime"));
-
-		qwerty.getCharacterGenerator().setListener(characterGeneratorListener);
-		sebeolFinal.getCharacterGenerator().setListener(characterGeneratorListener);
-
-		qwerty.setDictionaryName(DICTIONARY_EN);
-		sebeolFinal.setDictionaryName(DICTIONARY_KO);
-
-		inputMethods.add(sebeolFinal);
-		inputMethods.add(qwerty);
 
 	}
 
@@ -309,7 +298,7 @@ public class LBoard extends InputMethodService {
 				fos.write(data);
 			}
 			{
-				File sebeolFinal = new File(file, "Sebeolsik Final");
+				File sebeolFinal = new File(file, "Shin Sebeol 1995 Original");
 				sebeolFinal.mkdirs();
 				File lime = new File(sebeolFinal, "method.lime");
 				FileOutputStream fos = new FileOutputStream(lime);
@@ -317,7 +306,7 @@ public class LBoard extends InputMethodService {
 				for(char c : InternalInputMethodLoader.MAGIC_NUMBER.toCharArray()) {
 					dos.writeByte((byte) c);
 				}
-				for(char c : "Sebeolsik Final".toCharArray()) {
+				for(char c : "Shin Sebeol 1995 Original".toCharArray()) {
 					dos.writeByte((byte) c);
 				}
 				dos.writeByte(0);
@@ -496,7 +485,7 @@ public class LBoard extends InputMethodService {
 					clearComposing();
 				}
 
-				if(++currentInputMethodId >= 2) currentInputMethodId = 0;
+				if(++currentInputMethodId >= inputMethods.size()) currentInputMethodId = 0;
 				currentInputMethod = inputMethods.get(currentInputMethodId);
 				updateInputView();
 

@@ -176,7 +176,6 @@ public class InternalInputMethodLoader implements InputMethodLoader {
 						((BasicHardKeyboard) hardKeyboard).setCharacterGenerator(characterGenerator);
 					}
 				}
-				System.out.println(characterGenerator);
 				String dict = "";
 				while((b = dis.readByte()) != 0) {
 					dict += new String(Character.toChars(b));
