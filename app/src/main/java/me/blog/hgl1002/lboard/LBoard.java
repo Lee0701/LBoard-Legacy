@@ -56,12 +56,16 @@ import me.blog.hgl1002.lboard.engine.SQLiteDictionary;
 import me.blog.hgl1002.lboard.engine.Sentence;
 import me.blog.hgl1002.lboard.engine.Word;
 import me.blog.hgl1002.lboard.engine.WordChain;
+import me.blog.hgl1002.lboard.ime.HardKeyboard;
 import me.blog.hgl1002.lboard.ime.InputMethodLoader;
 import me.blog.hgl1002.lboard.ime.InternalInputMethodLoader;
 import me.blog.hgl1002.lboard.ime.LBoardInputMethod;
+import me.blog.hgl1002.lboard.ime.SoftKeyboard;
 import me.blog.hgl1002.lboard.ime.charactergenerator.CharacterGenerator;
 
 import me.blog.hgl1002.lboard.ime.KeyEventInfo;
+import me.blog.hgl1002.lboard.ime.hardkeyboard.DefaultHardKeyboard;
+import me.blog.hgl1002.lboard.ime.softkeyboard.DefaultSoftKeyboard;
 import me.blog.hgl1002.lboard.search.DefaultSearchViewManager;
 import me.blog.hgl1002.lboard.search.SearchEngine;
 import me.blog.hgl1002.lboard.search.SearchViewManager;
@@ -256,6 +260,25 @@ public class LBoard extends InputMethodService {
 			if(!lime.exists()) continue;
 			LBoardInputMethod method = loader.load(lime);
 			method.getCharacterGenerator().setListener(characterGeneratorListener);
+			CharSequence[][] labels = new CharSequence[0x100][2];
+			SoftKeyboard soft = method.getSoftKeyboard();
+			HardKeyboard hard = method.getHardKeyboard();
+			if(soft instanceof DefaultSoftKeyboard) {
+				if(hard instanceof DefaultHardKeyboard) {
+					long[][] mappings = ((DefaultHardKeyboard) hard).getMappings();
+					for(int i = 0 ; i < mappings.length ; i++) {
+						for(int j = 0 ; j < 2 ; j++) {
+							try {
+								labels[i][j] = new String(Character.toChars((int) mappings[i][j]));
+							} catch(Exception e) {
+								labels[i][j] = null;
+							}
+						}
+					}
+					((DefaultSoftKeyboard) soft).setLabels(labels);
+					((DefaultSoftKeyboard) soft).updateLabels();
+				}
+			}
 			inputMethods.add(method);
 		}
 
