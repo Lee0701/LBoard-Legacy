@@ -102,6 +102,7 @@ public class DefaultSoftKeyboard implements SoftKeyboard, KeyboardView.OnKeyboar
 				} catch (ArrayIndexOutOfBoundsException e) {}
 			}
 		}
+		mainKeyboardView.invalidateAllKeys();
 	}
 
 	public void setShiftState(boolean shiftOn) {

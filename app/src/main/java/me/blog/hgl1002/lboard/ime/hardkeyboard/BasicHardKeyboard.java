@@ -12,7 +12,10 @@ import me.blog.hgl1002.lboard.expression.nodes.TreeNode;
 import me.blog.hgl1002.lboard.ime.HardKeyboard;
 import me.blog.hgl1002.lboard.ime.KeyEventInfo;
 import me.blog.hgl1002.lboard.ime.LBoardInputMethod;
+import me.blog.hgl1002.lboard.ime.charactergenerator.BasicCharacterGenerator;
+import me.blog.hgl1002.lboard.ime.charactergenerator.BasicCodeSystem;
 import me.blog.hgl1002.lboard.ime.charactergenerator.CharacterGenerator;
+import me.blog.hgl1002.lboard.ime.softkeyboard.DefaultSoftKeyboard;
 
 public class BasicHardKeyboard implements HardKeyboard {
 
@@ -91,6 +94,7 @@ public class BasicHardKeyboard implements HardKeyboard {
 								parent.commitText(new String(new char[]{(char) result}));
 							}
 						}
+						updateLabels();
 						return true;
 					}
 				}
@@ -118,6 +122,32 @@ public class BasicHardKeyboard implements HardKeyboard {
 
 		}
 		return true;
+	}
+
+	public void updateLabels() {
+		if(method == null) return;
+		int shift = shiftPressing ? 1 : 0;
+		Map<String, Long> variables = characterGenerator.getVariables();
+		parser.setVariables(variables);
+		if(method.getSoftKeyboard() instanceof DefaultSoftKeyboard) {
+			CharSequence[][] labels = new CharSequence[mappings.length][2];
+			if(characterGenerator instanceof BasicCharacterGenerator) {
+				BasicCharacterGenerator generator = (BasicCharacterGenerator) characterGenerator;
+				for (int i = 0 ; i < mappings.length ; i++) {
+					if (mappings[i][shift] == null) continue;
+					long result = parser.parse(mappings[i][shift]);
+					result = generator.replaceVirtuals(result);
+					labels[i][shift] = BasicCodeSystem.convertToUnicode(result);
+				}
+			} else {
+				for (int i = 0 ; i < mappings.length ; i++) {
+					if (mappings[i][shift] == null) continue;
+					labels[i][shift] = BasicCodeSystem.convertToUnicode(parser.parse(mappings[i][shift]));
+				}
+			}
+			((DefaultSoftKeyboard) method.getSoftKeyboard()).setLabels(labels);
+			((DefaultSoftKeyboard) method.getSoftKeyboard()).updateLabels();
+		}
 	}
 
 	@Override

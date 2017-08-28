@@ -64,6 +64,7 @@ import me.blog.hgl1002.lboard.ime.SoftKeyboard;
 import me.blog.hgl1002.lboard.ime.charactergenerator.CharacterGenerator;
 
 import me.blog.hgl1002.lboard.ime.KeyEventInfo;
+import me.blog.hgl1002.lboard.ime.hardkeyboard.BasicHardKeyboard;
 import me.blog.hgl1002.lboard.ime.hardkeyboard.DefaultHardKeyboard;
 import me.blog.hgl1002.lboard.ime.softkeyboard.DefaultSoftKeyboard;
 import me.blog.hgl1002.lboard.search.DefaultSearchViewManager;
@@ -276,7 +277,6 @@ public class LBoard extends InputMethodService {
 						}
 					}
 					((DefaultSoftKeyboard) soft).setLabels(labels);
-					((DefaultSoftKeyboard) soft).updateLabels();
 				}
 			}
 			inputMethods.add(method);
@@ -398,6 +398,12 @@ public class LBoard extends InputMethodService {
 		searchView = searchViewManager.createView(this);
 		mainInputView.addView(searchView);
 
+		for(LBoardInputMethod method : inputMethods) {
+			if(method.getSoftKeyboard() instanceof DefaultSoftKeyboard) {
+				((DefaultSoftKeyboard) method.getSoftKeyboard()).updateLabels();
+			}
+		}
+
 		candidatesView = candidatesViewManager.createView(this);
 		mainInputView.addView(candidatesView);
 
@@ -451,6 +457,9 @@ public class LBoard extends InputMethodService {
 		FrameLayout placeholder = (FrameLayout) mainInputView.findViewById(R.id.keyboard_placeholder);
 		placeholder.removeAllViews();
 		keyboardView = currentInputMethod.getSoftKeyboard().createView(this);
+		if(currentInputMethod.getHardKeyboard() instanceof BasicHardKeyboard) {
+			((BasicHardKeyboard) currentInputMethod.getHardKeyboard()).updateLabels();
+		}
 		placeholder.addView(keyboardView);
 	}
 
