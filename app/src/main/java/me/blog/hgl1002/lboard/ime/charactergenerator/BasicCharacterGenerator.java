@@ -132,12 +132,7 @@ public class BasicCharacterGenerator implements CharacterGenerator {
 	}
 
 	public void processNormalAutomata() {
-		Map<String, Long> variables = getVariables();
-		variables.put("A", (long) currentState.iCho);
-		variables.put("B", (long) currentState.iJung);
-		variables.put("C", (long) currentState.iJong);
-		variables.put("T", 0L);
-		processAutomata(variables);
+		processAutomata(getNormalVariables());
 	}
 
 	public void processAutomata(Map<String, Long> variables) {
@@ -147,7 +142,7 @@ public class BasicCharacterGenerator implements CharacterGenerator {
 		currentState.status = result;
 		if(result == 0) {
 			automata = automataTable.get(0);
-			parser.setVariables(getVariables());
+			parser.setVariables(getNormalVariables());
 			resetComposing();
 			previousStates.push(currentState);
 			currentState = (State) currentState.clone();
@@ -158,12 +153,7 @@ public class BasicCharacterGenerator implements CharacterGenerator {
 	}
 
 	public void combinationFailed() {
-		Map<String, Long> variables = getVariables();
-		variables.put("I", (long) currentState.iCho);
-		variables.put("J", (long) currentState.iJung);
-		variables.put("K", (long) currentState.iJong);
-		variables.put("T", 1L);
-		processAutomata(variables);
+		processAutomata(getFailedVariables(1));
 	}
 
 	@Override
@@ -198,6 +188,24 @@ public class BasicCharacterGenerator implements CharacterGenerator {
 		variables.put("E", (long) currentState.jung);
 		variables.put("F", (long) currentState.jong);
 		variables.put("T", currentState.status);
+		return variables;
+	}
+
+	public Map<String, Long> getNormalVariables() {
+		Map<String, Long> variables = getVariables();
+		variables.put("A", (long) currentState.iCho);
+		variables.put("B", (long) currentState.iJung);
+		variables.put("C", (long) currentState.iJong);
+		variables.put("T", 0L);
+		return variables;
+	}
+
+	public Map<String, Long> getFailedVariables(long T) {
+		Map<String, Long> variables = getVariables();
+		variables.put("I", (long) currentState.iCho);
+		variables.put("J", (long) currentState.iJung);
+		variables.put("K", (long) currentState.iJong);
+		variables.put("T", T);
 		return variables;
 	}
 
