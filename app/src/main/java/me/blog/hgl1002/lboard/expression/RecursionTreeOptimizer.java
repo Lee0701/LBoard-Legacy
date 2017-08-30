@@ -1,5 +1,7 @@
 package me.blog.hgl1002.lboard.expression;
 
+import java.util.List;
+
 import me.blog.hgl1002.lboard.expression.nodes.BinaryTreeNode;
 import me.blog.hgl1002.lboard.expression.nodes.ConstantTreeNode;
 import me.blog.hgl1002.lboard.expression.nodes.ListTreeNode;
@@ -24,9 +26,11 @@ public class RecursionTreeOptimizer implements TreeOptimizer {
 			BinaryTreeNode binaryTreeNode = (BinaryTreeNode) node;
 			return optimizeBinary(binaryTreeNode);
 		} else if (node instanceof TernaryTreeNode) {
-			return node;
+			TernaryTreeNode ternaryTreeNode = (TernaryTreeNode) node;
+			return optimizeTernary(ternaryTreeNode);
 		} else if (node instanceof ListTreeNode) {
-			return node;
+			ListTreeNode listTreeNode = (ListTreeNode) node;
+			return optimizeList(listTreeNode);
 		} else {
 			throw new RuntimeException("Unsupported node type.");
 		}
@@ -34,6 +38,7 @@ public class RecursionTreeOptimizer implements TreeOptimizer {
 
 	public TreeNode optimizeUnary(UnaryTreeNode node) {
 		if(!(node.getCenter() instanceof ConstantTreeNode)) {
+			optimize(node.getCenter());
 			return node;
 		}
 		long center = ((ConstantTreeNode) node.getCenter()).getValue();
@@ -64,6 +69,8 @@ public class RecursionTreeOptimizer implements TreeOptimizer {
 	public TreeNode optimizeBinary(BinaryTreeNode node) {
 		if(!(node.getLeft() instanceof ConstantTreeNode
 				&& node.getRight() instanceof ConstantTreeNode)) {
+			node.setLeft(optimize(node.getLeft()));
+			node.setRight(optimize(node.getRight()));
 			return node;
 		}
 		long left = ((ConstantTreeNode) node.getLeft()).getValue();
@@ -146,6 +153,21 @@ public class RecursionTreeOptimizer implements TreeOptimizer {
 			return node;
 		}
 		return new ConstantTreeNode(result);
+	}
+
+	public TreeNode optimizeTernary(TernaryTreeNode node) {
+		node.setLeft(optimize(node.getLeft()));
+		node.setCenter(optimize(node.getCenter()));
+		node.setRight(optimize(node.getRight()));
+		return node;
+	}
+
+	public TreeNode optimizeList(ListTreeNode node) {
+		List<TreeNode> nodes = node.getNodes();
+		for(TreeNode n : nodes) {
+			nodes.set(nodes.indexOf(n), optimize(n));
+		}
+		return node;
 	}
 
 }
