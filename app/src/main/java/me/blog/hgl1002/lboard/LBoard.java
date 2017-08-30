@@ -466,28 +466,34 @@ public class LBoard extends InputMethodService {
 	@Override
 	public void onStartInputView(EditorInfo info, boolean restarting) {
 		super.onStartInputView(info, restarting);
-		if(restarting) {
-			commitComposingChar();
-			if(!composingWord.isEmpty()) appendWord(composingWord, composingWordStroke, Word.ATTRIBUTE_SPACED);
-			clearComposing();
-			commitSentence(sentence, true, true);
-			startNewSentence(sentence);
-			updateInput();
-			start = true;
-			updatePrediction();
+		if(sentenceUnitComposition) {
+			if(restarting) {
+				commitComposingChar();
+				if(!composingWord.isEmpty()) appendWord(composingWord, composingWordStroke, Word.ATTRIBUTE_SPACED);
+				clearComposing();
+				commitSentence(sentence, true, true);
+				startNewSentence(sentence);
+				updateInput();
+				start = true;
+				updatePrediction();
+			} else {
+				commitComposingChar();
+				clearComposing();
+				startNewSentence(sentence);
+				updateInput();
+				start = true;
+				updatePrediction();
+			}
 		} else {
+			composingChar = "";
 			commitComposingChar();
-			clearComposing();
-			startNewSentence(sentence);
-			updateInput();
-			start = true;
-			updatePrediction();
 		}
 	}
 
 	@Override
 	public void onStartInput(EditorInfo attribute, boolean restarting) {
 		super.onStartInput(attribute, restarting);
+		composingChar = "";
 		if(getCurrentInputConnection() != null) currentInputMethod.getCharacterGenerator().resetComposing();
 	}
 
