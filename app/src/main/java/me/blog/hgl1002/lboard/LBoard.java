@@ -599,8 +599,8 @@ public class LBoard extends InputMethodService {
 						getCurrentInputConnection().sendKeyEvent(new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_DEL));
 					}
 				}
-				updateBasicLabels();
 			}
+			updateBasicLabels();
 			return true;
 
 		case KeyEvent.KEYCODE_SPACE:
