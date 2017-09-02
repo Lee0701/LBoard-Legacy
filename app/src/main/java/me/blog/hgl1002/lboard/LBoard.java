@@ -435,6 +435,12 @@ public class LBoard extends InputMethodService {
 		}
 	}
 
+	public void updateBasicLabels() {
+		if(currentInputMethod.getHardKeyboard() instanceof BasicHardKeyboard) {
+			((BasicHardKeyboard) currentInputMethod.getHardKeyboard()).updateLabels();
+		}
+	}
+
 	public void updateCandidates() {
 		if(!sentenceUnitComposition) return;
 		String stroke = composingWordStroke + STROKE_SEPARATOR + composingCharStroke;
@@ -458,9 +464,7 @@ public class LBoard extends InputMethodService {
 		FrameLayout placeholder = (FrameLayout) mainInputView.findViewById(R.id.keyboard_placeholder);
 		placeholder.removeAllViews();
 		keyboardView = currentInputMethod.getSoftKeyboard().createView(this);
-		if(currentInputMethod.getHardKeyboard() instanceof BasicHardKeyboard) {
-			((BasicHardKeyboard) currentInputMethod.getHardKeyboard()).updateLabels();
-		}
+		updateBasicLabels();
 		placeholder.addView(keyboardView);
 	}
 
@@ -499,143 +503,8 @@ public class LBoard extends InputMethodService {
 	}
 
 	public boolean onKeyEvent(KeyEvent event, boolean hardKey) {
-		InputConnection ic = getCurrentInputConnection();
 		boolean ret = false;
-		switch(event.getKeyCode()) {
-		case KeyEvent.KEYCODE_BACK:
-			if(event.getAction() == KeyEvent.ACTION_UP) {
-				if (searchViewShown) {
-					hideSearchView();
-				}
-			}
-			break;
-		case -500:
-			if(event.getAction() == KeyEvent.ACTION_DOWN) {
-//				InputMethodManager manager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
-//				IBinder token = getWindow().getWindow().getAttributes().token;
-//				if(inputted) {
-//					manager.switchToLastInputMethod(token);
-//				} else {
-//					manager.switchToNextInputMethod(token, false);
-//				}
-				commitComposingChar();
-				if(!composingWord.isEmpty()) {
-					appendWord(composingWord, composingWordStroke, Word.ATTRIBUTE_SPACED);
-					clearComposing();
-				}
 
-				if(++currentInputMethodId >= inputMethods.size()) currentInputMethodId = 0;
-				currentInputMethod = inputMethods.get(currentInputMethodId);
-				updateInputView();
-
-				updateInput();
-				start = true;
-				updatePrediction();
-			}
-			return true;
-		case KeyEvent.KEYCODE_DEL:
-			if(event.getAction() == KeyEvent.ACTION_DOWN) {
-				if (currentInputMethod.getCharacterGenerator().backspace()) {
-					composingCharStroke = composingCharStroke.substring(0, composingCharStroke.length()-1);
-					if(!composingCharStroke.isEmpty()) updateCandidates();
-					else updatePrediction();
-				} else {
-					if(searchViewShown) {
-						if(searchText.length() > 0) {
-							searchText = searchText.substring(0, searchText.length()-1);
-						}
-						searchViewManager.setText(searchText + searchTextComposing);
-					} else {
-						if(!composingWord.isEmpty()) {
-							composingWord = composingWord.substring(0, composingWord.length()-1);
-							for(int i = composingWordStroke.length()-1 ; i >= 0 ; i--) {
-								if(composingWordStroke.charAt(i) == STROKE_SEPARATOR) {
-									composingWordStroke = composingWordStroke.substring(0, i);
-									break;
-								}
-							}
-							updateInput();
-							updateCandidates();
-						} else if(sentence.size() > 0) {
-							Word last = sentence.getLast();
-							if((last.getAttribute() & Sentence.ATTRIBUTE_SPACED) != 0) {
-								last.setAttribute(last.getAttribute() & ~Sentence.ATTRIBUTE_SPACED);
-							} else {
-								sentence.pop();
-							}
-							clearComposing();
-							updateInput();
-							updateCandidates();
-						} else {
-							clearComposing();
-							ic.sendKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DEL));
-							ic.sendKeyEvent(new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_DEL));
-						}
-					}
-				}
-			} else {
-				if(sentence.size() <= 0 && composingWord.isEmpty() && composingChar.isEmpty()) updatePrediction();
-			}
-			return true;
-		}
-
-		if(event.getAction() == KeyEvent.ACTION_DOWN) {
-			if (searchViewShown && !ret) {
-				switch (event.getKeyCode()) {
-				case KeyEvent.KEYCODE_ENTER:
-					finishComposing();
-					search();
-					break;
-
-				case KeyEvent.KEYCODE_SPACE:
-					finishComposing();
-					searchText += " ";
-					break;
-				}
-				return true;
-			}
-		}
-
-		if(event.getAction() == KeyEvent.ACTION_DOWN) {
-			switch (event.getKeyCode()) {
-			case KeyEvent.KEYCODE_SPACE:
-				if(sentenceUnitComposition) {
-					commitComposingChar();
-					if (composingWord.isEmpty() && sentence.size() > 0) {
-						Word last = sentence.getLast();
-						if ((last.getAttribute() & Sentence.ATTRIBUTE_SPACED) == 0) {
-							last.setAttribute(last.getAttribute() | Sentence.ATTRIBUTE_SPACED);
-						}
-					} else if (!composingWord.isEmpty()) {
-						appendWord(composingWord, composingWordStroke, Sentence.ATTRIBUTE_SPACED);
-					}
-					clearComposing();
-					updateInput();
-					updatePrediction();
-					start = false;
-				} else {
-					return false;
-				}
-				return true;
-
-			case KeyEvent.KEYCODE_ENTER:
-				if(sentenceUnitComposition) {
-					commitComposingChar();
-					if (!composingWord.isEmpty()) appendWord(composingWord, composingWordStroke);
-					clearComposing();
-					boolean learn = !isPasswordField();
-					commitSentence(sentence, learn);
-					startNewSentence(sentence);
-					updateInput();
-					updatePrediction();
-					start = true;
-				} else {
-					return false;
-				}
-				break;
-
-			}
-		}
 		inputted = true;
 		ret = currentInputMethod.getHardKeyboard().onKeyEvent(
 				event, new KeyEventInfo.Builder().setKeyType(hardKey ? KeyEventInfo.KEYTYPE_HARDKEY : KeyEventInfo.KEYTYPE_SOFTKEY).build());
@@ -645,6 +514,137 @@ public class LBoard extends InputMethodService {
 		}
 
 		return ret;
+	}
+
+	public boolean onSpecialKey(int keyCode) {
+		if (searchViewShown) {
+			switch (keyCode) {
+			case KeyEvent.KEYCODE_ENTER:
+				finishComposing();
+				search();
+				break;
+
+			case KeyEvent.KEYCODE_SPACE:
+				finishComposing();
+				searchText += " ";
+				break;
+			}
+			return true;
+		}
+		switch (keyCode) {
+		case KeyEvent.KEYCODE_BACK:
+			if (searchViewShown) {
+				hideSearchView();
+			}
+			break;
+		case KeyEvent.KEYCODE_LANGUAGE_SWITCH:
+//			InputMethodManager manager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+//			IBinder token = getWindow().getWindow().getAttributes().token;
+//			if(inputted) {
+//				manager.switchToLastInputMethod(token);
+//			} else {
+//				manager.switchToNextInputMethod(token, false);
+//			}
+			finishComposing();
+			commitComposingChar();
+			if(!composingWord.isEmpty()) {
+				appendWord(composingWord, composingWordStroke, Word.ATTRIBUTE_SPACED);
+				clearComposing();
+			}
+
+			if(++currentInputMethodId >= inputMethods.size()) currentInputMethodId = 0;
+			currentInputMethod = inputMethods.get(currentInputMethodId);
+			updateInputView();
+
+			updateInput();
+			start = true;
+			updatePrediction();
+			return true;
+
+		case KeyEvent.KEYCODE_DEL:
+			if (currentInputMethod.getCharacterGenerator().backspace()) {
+				if(composingCharStroke.length() > 0) composingCharStroke = composingCharStroke.substring(0, composingCharStroke.length()-1);
+				if(composingCharStroke.isEmpty() && composingWordStroke.isEmpty()) updatePrediction();
+				else updateCandidates();
+			} else {
+				if(searchViewShown) {
+					if(searchText.length() > 0) {
+						searchText = searchText.substring(0, searchText.length()-1);
+					}
+					searchViewManager.setText(searchText + searchTextComposing);
+				} else {
+					if(!composingWord.isEmpty()) {
+						composingWord = composingWord.substring(0, composingWord.length()-1);
+						for(int i = composingWordStroke.length()-1 ; i >= 0 ; i--) {
+							if(composingWordStroke.charAt(i) == STROKE_SEPARATOR) {
+								composingWordStroke = composingWordStroke.substring(0, i);
+								break;
+							}
+						}
+						updateInput();
+						updateCandidates();
+					} else if(sentence.size() > 0) {
+						Word last = sentence.getLast();
+						if((last.getAttribute() & Sentence.ATTRIBUTE_SPACED) != 0) {
+							last.setAttribute(last.getAttribute() & ~Sentence.ATTRIBUTE_SPACED);
+						} else {
+							sentence.pop();
+						}
+						clearComposing();
+						updateInput();
+						updatePrediction();
+					} else {
+						clearComposing();
+						getCurrentInputConnection().sendKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DEL));
+						getCurrentInputConnection().sendKeyEvent(new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_DEL));
+					}
+				}
+				updateBasicLabels();
+			}
+			return true;
+
+		case KeyEvent.KEYCODE_SPACE:
+			finishComposing();
+			if(sentenceUnitComposition) {
+				commitComposingChar();
+				if(composingChar.isEmpty() && composingWord.isEmpty() && sentence.size() == 0) {
+					return false;
+				} else if (composingWord.isEmpty() && sentence.size() > 0) {
+					Word last = sentence.getLast();
+					if ((last.getAttribute() & Sentence.ATTRIBUTE_SPACED) == 0) {
+						last.setAttribute(last.getAttribute() | Sentence.ATTRIBUTE_SPACED);
+					}
+				} else if (!composingWord.isEmpty()) {
+					appendWord(composingWord, composingWordStroke, Sentence.ATTRIBUTE_SPACED);
+				}
+				clearComposing();
+				updateInput();
+				updatePrediction();
+				start = false;
+			} else {
+				return false;
+			}
+			return true;
+
+		case KeyEvent.KEYCODE_ENTER:
+			finishComposing();
+			if(sentenceUnitComposition) {
+				commitComposingChar();
+				if (!composingWord.isEmpty()) appendWord(composingWord, composingWordStroke);
+				clearComposing();
+				boolean learn = !isPasswordField();
+				commitSentence(sentence, learn);
+				startNewSentence(sentence);
+				updateInput();
+				updatePrediction();
+				start = true;
+			} else {
+				return false;
+			}
+			break;
+
+		}
+		return false;
 	}
 
 	public void shareDictionary() {

@@ -8,7 +8,7 @@
 	<Row android:rowEdgeFlags="top|bottom">
 		<Key android:codes="-114" android:keyLabel="ALT"
 			android:keyWidth="10%p" android:keyEdgeFlags="left"/>
-		<Key android:codes="-500" android:keyLabel="A"/>
+		<Key android:codes="204" android:keyLabel="A"/>
 		<Key android:codes="59" android:isModifier="true" android:keyLabel="SFT"/>
 		<Key android:codes="62" android:keyLabel=" "
 			android:keyWidth="40%p"/>

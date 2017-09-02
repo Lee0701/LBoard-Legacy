@@ -57,15 +57,10 @@ public class BasicHardKeyboard implements HardKeyboard {
 		EditorInfo editorInfo = parent.getCurrentInputEditorInfo();
 		switch (event.getKeyCode()) {
 		case KeyEvent.KEYCODE_SPACE:
-			parent.finishComposing();
-			return false;
-
 		case KeyEvent.KEYCODE_DEL:
-			return false;
-
 		case KeyEvent.KEYCODE_ENTER:
-			parent.finishComposing();
-			return false;
+		case KeyEvent.KEYCODE_LANGUAGE_SWITCH:
+			return parent.onSpecialKey(event.getKeyCode());
 
 		case KeyEvent.KEYCODE_SHIFT_LEFT:
 		case KeyEvent.KEYCODE_SHIFT_RIGHT:
