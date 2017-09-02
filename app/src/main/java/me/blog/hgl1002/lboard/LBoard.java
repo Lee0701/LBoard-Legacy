@@ -537,7 +537,8 @@ public class LBoard extends InputMethodService {
 			if(event.getAction() == KeyEvent.ACTION_DOWN) {
 				if (currentInputMethod.getCharacterGenerator().backspace()) {
 					composingCharStroke = composingCharStroke.substring(0, composingCharStroke.length()-1);
-					updateCandidates();
+					if(!composingCharStroke.isEmpty()) updateCandidates();
+					else updatePrediction();
 				} else {
 					if(searchViewShown) {
 						if(searchText.length() > 0) {
