@@ -65,6 +65,7 @@ public class BasicHardKeyboard implements HardKeyboard {
 		case KeyEvent.KEYCODE_SHIFT_LEFT:
 		case KeyEvent.KEYCODE_SHIFT_RIGHT:
 			shiftPressing = true;
+			updateLabels();
 			return true;
 
 		case KeyEvent.KEYCODE_ALT_LEFT:
