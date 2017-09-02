@@ -177,11 +177,6 @@ public class BasicCharacterGenerator implements CharacterGenerator {
 	}
 
 	@Override
-	public String getStroke() {
-		return null;
-	}
-
-	@Override
 	public Map<String, Long> getVariables() {
 		Map<String, Long> variables = new HashMap<>();
 		variables.put("D", (long) currentState.cho);

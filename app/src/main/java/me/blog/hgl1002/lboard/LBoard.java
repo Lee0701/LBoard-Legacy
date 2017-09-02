@@ -90,12 +90,14 @@ public class LBoard extends InputMethodService {
 	private static final CharacterStyle SPAN_COMPOSING_SENTENCE = new BackgroundColorSpan(0xFFE0F2F7);
 	private static final CharacterStyle SPAN_COMPOSING_CHAR = new BackgroundColorSpan(0xFF00BFFF);
 
-	protected static final List<String> SENTENCE_STOPS = new ArrayList<String>() {{
+	public static final List<String> SENTENCE_STOPS = new ArrayList<String>() {{
 		add(".");
 		add(",");
 		add("?");
 		add("!");
 	}};
+
+	public static final char STROKE_SEPARATOR = '\t';
 
 	protected ViewGroup mainInputView;
 	protected View keyboardView;
@@ -117,7 +119,7 @@ public class LBoard extends InputMethodService {
 
 	Animation slideUp, slideDown;
 
-	protected boolean sentenceUnitComposition = false;
+	protected boolean sentenceUnitComposition = true;
 
 	private boolean inputted = false;
 	private boolean searchViewShown = false;
@@ -129,7 +131,6 @@ public class LBoard extends InputMethodService {
 	private String composingWord;
 	private String composingCharStroke;
 	private String composingWordStroke;
-	private Stack<String> composingWordStrokeHistory = new Stack<>();
 	private Sentence sentence;
 
 	private boolean start;
@@ -177,9 +178,7 @@ public class LBoard extends InputMethodService {
 				searchViewManager.setText(searchText + searchTextComposing);
 			} else {
 				composeChar(composing);
-				composingCharStroke = source.getStroke();
 				updateInput();
-				updateCandidates();
 			}
 		}
 
@@ -205,6 +204,7 @@ public class LBoard extends InputMethodService {
 				commitComposingChar();
 				clearComposing();
 				appendWord((Word) candidate);
+				start = false;
 				updateInput();
 				updatePrediction();
 			}
@@ -437,7 +437,8 @@ public class LBoard extends InputMethodService {
 
 	public void updateCandidates() {
 		if(!sentenceUnitComposition) return;
-		String stroke = composingWordStroke + composingCharStroke;
+		String stroke = composingWordStroke + STROKE_SEPARATOR + composingCharStroke;
+		stroke = stroke.replaceAll(String.valueOf(STROKE_SEPARATOR), "");
 		dictionaryManager.searchCurrentWord(
 				currentInputMethod.getDictionaryName(),
 				LBoardDictionary.SEARCH_PREFIX,
@@ -534,7 +535,10 @@ public class LBoard extends InputMethodService {
 			return true;
 		case KeyEvent.KEYCODE_DEL:
 			if(event.getAction() == KeyEvent.ACTION_DOWN) {
-				if (!currentInputMethod.getCharacterGenerator().backspace()) {
+				if (currentInputMethod.getCharacterGenerator().backspace()) {
+					composingCharStroke = composingCharStroke.substring(0, composingCharStroke.length()-1);
+					updateCandidates();
+				} else {
 					if(searchViewShown) {
 						if(searchText.length() > 0) {
 							searchText = searchText.substring(0, searchText.length()-1);
@@ -543,10 +547,11 @@ public class LBoard extends InputMethodService {
 					} else {
 						if(!composingWord.isEmpty()) {
 							composingWord = composingWord.substring(0, composingWord.length()-1);
-							if(composingWordStrokeHistory.isEmpty()) {
-								composingWordStroke = "";
-							} else {
-								composingWordStroke = composingWordStrokeHistory.pop();
+							for(int i = composingWordStroke.length()-1 ; i >= 0 ; i--) {
+								if(composingWordStroke.charAt(i) == STROKE_SEPARATOR) {
+									composingWordStroke = composingWordStroke.substring(0, i);
+									break;
+								}
 							}
 							updateInput();
 							updateCandidates();
@@ -572,9 +577,6 @@ public class LBoard extends InputMethodService {
 			}
 			return true;
 		}
-		inputted = true;
-		ret = currentInputMethod.getHardKeyboard().onKeyEvent(
-				event, new KeyEventInfo.Builder().setKeyType(hardKey ? KeyEventInfo.KEYTYPE_HARDKEY : KeyEventInfo.KEYTYPE_SOFTKEY).build());
 
 		if(event.getAction() == KeyEvent.ACTION_DOWN) {
 			if (searchViewShown && !ret) {
@@ -633,6 +635,10 @@ public class LBoard extends InputMethodService {
 
 			}
 		}
+		inputted = true;
+		ret = currentInputMethod.getHardKeyboard().onKeyEvent(
+				event, new KeyEventInfo.Builder().setKeyType(hardKey ? KeyEventInfo.KEYTYPE_HARDKEY : KeyEventInfo.KEYTYPE_SOFTKEY).build());
+
 		if (event.getAction() == KeyEvent.ACTION_UP && event.getKeyCode() == -114) {
 			shareDictionary();
 		}
@@ -738,7 +744,6 @@ public class LBoard extends InputMethodService {
 		composingChar = "";
 		composingWordStroke = "";
 		composingCharStroke = "";
-		composingWordStrokeHistory.clear();
 	}
 
 	public void commitText(CharSequence text) {
@@ -764,16 +769,15 @@ public class LBoard extends InputMethodService {
 							appendWord(composingWord, composingWordStroke, 0);
 							clearComposing();
 							composingWord += text;
-							composingWordStroke += text;
+							composingWordStroke += String.valueOf(STROKE_SEPARATOR) + text;
 							appendWord(composingWord, composingWordStroke, 0);
 							clearComposing();
 							updateInput();
 							start = true;
 							updatePrediction();
 						} else {
-							composingWordStrokeHistory.push(composingWordStroke);
 							composingWord += text;
-							composingWordStroke += text;
+							composingWordStroke += String.valueOf(STROKE_SEPARATOR) + text;
 							updateInput();
 							updateCandidates();
 						}
@@ -787,6 +791,11 @@ public class LBoard extends InputMethodService {
 				getCurrentInputConnection().commitText(text, 1);
 			}
 		}
+	}
+
+	public void appendStroke(String stroke) {
+		composingCharStroke += stroke;
+		updateCandidates();
 	}
 
 	public void composeChar(String composingChar) {
@@ -803,11 +812,8 @@ public class LBoard extends InputMethodService {
 		}
 		this.composingWord += composingChar;
 		this.composingChar = "";
-		if(composingWordStrokeHistory.isEmpty() || !composingWordStrokeHistory.peek().equals(composingWordStroke)) {
-			composingWordStrokeHistory.push(composingWordStroke);
-		}
 
-		this.composingWordStroke += composingCharStroke;
+		if(composingCharStroke != "") this.composingWordStroke += String.valueOf(STROKE_SEPARATOR) + composingCharStroke;
 		this.composingCharStroke = "";
 	}
 
@@ -816,7 +822,8 @@ public class LBoard extends InputMethodService {
 	}
 
 	public void appendWord(String composingWord, String composingWordStroke, int attribute) {
-		Word word = new Word(composingWord, composingWordStroke, 1, attribute);
+		String stroke = composingWordStroke.replaceAll(String.valueOf(STROKE_SEPARATOR), "");
+		Word word = new Word(composingWord, stroke, 1, attribute);
 		this.appendWord(word);
 	}
 

@@ -79,6 +79,8 @@ public class BasicHardKeyboard implements HardKeyboard {
 
 		default:
 			if (event.isPrintingKey()) {
+				char keyChar = (char) event.getUnicodeChar(
+						(shiftPressing || event.isShiftPressed() ? KeyEvent.META_SHIFT_ON : 0) | (altPressing ? KeyEvent.META_ALT_ON : 0));
 				if (mappings != null && characterGenerator != null) {
 					int keyCode = event.getKeyCode();
 					if (keyCode >= 0 && keyCode < mappings.length) {
@@ -89,7 +91,9 @@ public class BasicHardKeyboard implements HardKeyboard {
 						if(node != null) result = parser.parse(node);
 						if (result != 0) {
 							boolean ret = characterGenerator.onCode(result);
-							if (!ret) {
+							if (ret) {
+								parent.appendStroke(new String(Character.toChars(keyChar)));
+							} else {
 								parent.finishComposing();
 								parent.commitText(new String(new char[]{(char) result}));
 							}
@@ -98,8 +102,6 @@ public class BasicHardKeyboard implements HardKeyboard {
 						return true;
 					}
 				}
-				char keyChar = (char) event.getUnicodeChar(
-						(shiftPressing || event.isShiftPressed() ? KeyEvent.META_SHIFT_ON : 0) | (altPressing ? KeyEvent.META_ALT_ON : 0));
 				parent.finishComposing();
 				parent.commitText(new String(new char[]{keyChar}));
 				return true;

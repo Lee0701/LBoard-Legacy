@@ -75,7 +75,6 @@ public class UnicodeCharacterGenerator implements CharacterGenerator {
 	protected int last;
 	protected int beforeJong;
 	protected String composing;
-	protected String stroke;
 
 	protected boolean moachigi;
 	protected boolean firstMidEnd;
@@ -91,8 +90,7 @@ public class UnicodeCharacterGenerator implements CharacterGenerator {
 		int last;
 		int beforeJong;
 		String composing;
-		String stroke;
-		public History(int cho, int jung, int jong, int last, int beforeJong, String composing, String stroke) {
+		public History(int cho, int jung, int jong, int last, int beforeJong, String composing) {
 			super();
 			this.cho = cho;
 			this.jung = jung;
@@ -100,7 +98,6 @@ public class UnicodeCharacterGenerator implements CharacterGenerator {
 			this.last = last;
 			this.beforeJong = beforeJong;
 			this.composing = composing;
-			this.stroke = stroke;
 		}
 	}
 
@@ -117,7 +114,7 @@ public class UnicodeCharacterGenerator implements CharacterGenerator {
 	public boolean onCode(long originalCode) {
 		// 입력 기록을 업데이트한다.
 		if(composing == "") histories.clear();
-		else histories.push(new History(cho, jung, jong, last, beforeJong, composing, stroke));
+		else histories.push(new History(cho, jung, jong, last, beforeJong, composing));
 
 		int code = (int) originalCode;
 		boolean result;
@@ -286,7 +283,7 @@ public class UnicodeCharacterGenerator implements CharacterGenerator {
 						this.cho = convertToCho(last) - 0x1100;
 						composing = getVisible(this.cho, this.jung, this.jong);
 						// 도깨비불이 일어났으므로 기록을 하나 더 남긴다.
-						histories.push(new History(cho, jung, jong, last, beforeJong, composing, stroke));
+						histories.push(new History(cho, jung, jong, last, beforeJong, composing));
 						this.jung = jungCode;
 						// 결합된 종성이 아니었을 경우
 					} else {
@@ -299,7 +296,7 @@ public class UnicodeCharacterGenerator implements CharacterGenerator {
 							resetComposing();
 							this.cho = convertedCho - 0x1100;
 							composing = getVisible(this.cho, this.jung, this.jong);
-							histories.push(new History(cho, jung, jong, last, beforeJong, composing, stroke));
+							histories.push(new History(cho, jung, jong, last, beforeJong, composing));
 							this.jung = jungCode;
 						}
 					}
@@ -320,8 +317,6 @@ public class UnicodeCharacterGenerator implements CharacterGenerator {
 			return false;
 		}
 
-		stroke += new String(Character.toChars(last));
-
 		// 화면에 표시되는 문자를 계산해서 표시를 요청한다.
 		this.composing = getVisible(this.cho, this.jung, this.jong);
 		if(listener != null) listener.onCompose(this, composing);
@@ -341,7 +336,6 @@ public class UnicodeCharacterGenerator implements CharacterGenerator {
 			this.last = history.last;
 			this.beforeJong = history.beforeJong;
 			this.composing = history.composing;
-			this.stroke = history.stroke;
 		} catch(EmptyStackException e) {
 			// 스택이 비었을 경우 (입력된 낱자가 없을 경우)
 			if(composing == "") {
@@ -362,7 +356,6 @@ public class UnicodeCharacterGenerator implements CharacterGenerator {
 		if(listener != null) listener.onCommit(this);
 		cho = jung = jong = -1;
 		composing = "";
-		stroke = "";
 		histories.clear();
 	}
 
@@ -533,11 +526,6 @@ public class UnicodeCharacterGenerator implements CharacterGenerator {
 			e.printStackTrace();
 		}
 		return null;
-	}
-
-	@Override
-	public String getStroke() {
-		return stroke;
 	}
 
 	public String getComposing() {
