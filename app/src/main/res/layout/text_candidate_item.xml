@@ -6,6 +6,7 @@
 	android:paddingBottom="10px"
 	android:paddingLeft="20px"
 	android:paddingRight="20px"
-	android:textSize="10pt">
+	android:textSize="10pt"
+	android:background="@drawable/text_candidate_item">
 
 </TextView>
