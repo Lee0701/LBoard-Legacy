@@ -1,6 +1,8 @@
 package me.blog.hgl1002.lboard.expression;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import me.blog.hgl1002.lboard.expression.nodes.*;
@@ -90,10 +92,15 @@ public class StringRecursionTreeBuilder implements TreeBuilder {
 			}
 
 			TreeNode parseComma() {
+				List<TreeNode> nodes = new ArrayList<>();
 				TreeNode x = parseAssignment();
+				nodes.add(x);
 				for(;;) {
-					if(eat(',')) x = parseAssignment();
-					else return x;
+					if(eat(',')) nodes.add(parseAssignment());
+					else {
+						if(nodes.size() == 1) return nodes.get(0);
+						else return new ListTreeNode(Operator.COMMA, nodes);
+					}
 				}
 			}
 
