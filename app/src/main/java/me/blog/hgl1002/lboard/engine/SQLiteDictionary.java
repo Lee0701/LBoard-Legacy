@@ -4,6 +4,7 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class SQLiteDictionary implements WritableDictionary {
@@ -100,7 +101,67 @@ public class SQLiteDictionary implements WritableDictionary {
 
 	@Override
 	public int learnWords(Word[] words) {
+		if(words.length >= 5) {
+		}
+		for(int i = 5 ; i >= 2 ; i--) {
+			if(words.length >= i) {
+				String tableName = "";
+				switch (i) {
+				case 5:
+					tableName = TABLE_NAME_QUINQGRAMS;
+					break;
+				case 4:
+					tableName = TABLE_NAME_QUADGRAMS;
+					break;
+				case 3:
+					tableName = TABLE_NAME_TRIGRAMS;
+					break;
+				case 2:
+					tableName = TABLE_NAME_BIGRAMS;
+					break;
+				}
+				learnChain(tableName, Arrays.copyOfRange(words, words.length-6, words.length-1));
+			}
+		}
 		return 0;
+	}
+
+	protected void learnChain(String tableName, Word[] words) {
+		String sql = "select * from " + tableName;
+		sql += " where " + getWhereClause(words.length);
+		String[] values = new String[words.length];
+		for(int i = 0 ; i < words.length ; i++) {
+			values[i] = words[i].getCandidate();
+		}
+		Cursor cursor = dbDictionary.rawQuery(sql, values);
+		if(cursor.getCount() > 0) {
+			sql = "update " + tableName;
+			sql += " set " + COLUMN_NAME_FREQUENCY + " = " + COLUMN_NAME_FREQUENCY + " + 1";
+			sql += " where " + getWhereClause(words.length);
+			dbDictionary.execSQL(sql, values);
+		} else {
+			sql = "insert into " + tableName;
+			sql += " (" + COLUMN_NAME_X;
+			sql += ", " + COLUMN_NAME_Y;
+			if(words.length >= 3) sql += ", " + COLUMN_NAME_A;
+			if(words.length >= 4) sql += ", " + COLUMN_NAME_B;
+			if(words.length >= 5) sql += ", " + COLUMN_NAME_C;
+			sql += ")";
+			sql += " values(?";
+			for(int i = 1 ; i < words.length ; i++) sql += ", ?";
+			sql += ")";
+			dbDictionary.execSQL(sql, values);
+		}
+	}
+
+	private String getWhereClause(int length) {
+		String sql = "";
+		sql += COLUMN_NAME_X + " = ?";
+		sql += " and " + COLUMN_NAME_Y + " = ?";
+		if(length >= 3) sql += " and " + COLUMN_NAME_A + " = ?";
+		if(length >= 4) sql += " and " + COLUMN_NAME_B + " = ?";
+		if(length >= 5) sql += " and " + COLUMN_NAME_C + " = ?";
+		return sql;
 	}
 
 }
