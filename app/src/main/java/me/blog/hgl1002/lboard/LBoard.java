@@ -52,8 +52,11 @@ import me.blog.hgl1002.lboard.cand.CandidatesViewManager;
 import me.blog.hgl1002.lboard.cand.TextCandidatesViewManager;
 import me.blog.hgl1002.lboard.engine.DictionaryManager;
 import me.blog.hgl1002.lboard.engine.LBoardDictionary;
+import me.blog.hgl1002.lboard.engine.LBoardPredictionEngine;
+import me.blog.hgl1002.lboard.engine.PredictionEngine;
 import me.blog.hgl1002.lboard.engine.SQLiteDictionary;
 import me.blog.hgl1002.lboard.engine.Sentence;
+import me.blog.hgl1002.lboard.engine.StringSegment;
 import me.blog.hgl1002.lboard.engine.Word;
 import me.blog.hgl1002.lboard.engine.WordChain;
 import me.blog.hgl1002.lboard.ime.HardKeyboard;
@@ -90,13 +93,6 @@ public class LBoard extends InputMethodService {
 	private static final CharacterStyle SPAN_COMPOSING_SENTENCE = new BackgroundColorSpan(0xFFE0F2F7);
 	private static final CharacterStyle SPAN_COMPOSING_CHAR = new BackgroundColorSpan(0xFF00BFFF);
 
-	public static final List<String> SENTENCE_STOPS = new ArrayList<String>() {{
-		add(".");
-		add(",");
-		add("?");
-		add("!");
-	}};
-
 	public static final char STROKE_SEPARATOR = '\t';
 
 	protected ViewGroup mainInputView;
@@ -107,9 +103,9 @@ public class LBoard extends InputMethodService {
 
 	protected SearchViewManager searchViewManager;
 
-	protected DictionaryManager dictionaryManager;
-
 	protected CandidatesViewManager candidatesViewManager;
+
+	protected PredictionEngine predictionEngine;
 
 	protected List<LBoardInputMethod> inputMethods;
 	protected int currentInputMethodId;
@@ -121,19 +117,11 @@ public class LBoard extends InputMethodService {
 
 	protected boolean sentenceUnitComposition = true;
 
+	protected String composingChar = "";
+
 	private boolean inputted = false;
 	private boolean searchViewShown = false;
 	private String searchText = "", searchTextComposing = "";
-
-	protected List<String> sentenceStops;
-
-	private String composingChar;
-	private String composingWord;
-	private String composingCharStroke;
-	private String composingWordStroke;
-	private Sentence sentence;
-
-	private boolean start;
 
 	Handler handler = new Handler() {
 		@Override
@@ -196,21 +184,6 @@ public class LBoard extends InputMethodService {
 		}
 	};
 
-	protected CandidatesViewManager.CandidatesViewListener candidatesViewListener
-			= new CandidatesViewManager.CandidatesViewListener() {
-		@Override
-		public void onSelect(Object candidate) {
-			if(candidate instanceof Word) {
-				commitComposingChar();
-				clearComposing();
-				appendWord((Word) candidate);
-				start = false;
-				updateInput();
-				updatePrediction();
-			}
-		}
-	};
-
 	public LBoard() {
 		inputMethods = new ArrayList<>();
 	}
@@ -218,8 +191,6 @@ public class LBoard extends InputMethodService {
 	@Override
 	public void onCreate() {
 		super.onCreate();
-
-		sentenceStops = SENTENCE_STOPS;
 
 		slideDown = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.slide_down);
 		slideUp = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.slide_up);
@@ -231,20 +202,16 @@ public class LBoard extends InputMethodService {
 		SearchEngine engine = new GoogleWebSearchEngine();
 		searchViewManager = new DefaultSearchViewManager(this, engine);
 
-		dictionaryManager = new DictionaryManager();
+		LBoardPredictionEngine predictionEngine = new LBoardPredictionEngine(this);
+
 		LBoardDictionary dictionary = new SQLiteDictionary(getFilesDir() + "/" + DICTIONARY_KO + ".dic");
-		dictionaryManager.addDictionary(DICTIONARY_KO, dictionary);
-		LBoardDictionary english = new SQLiteDictionary(getFilesDir() + "/" + DICTIONARY_EN + ".dic");
-		dictionaryManager.addDictionary(DICTIONARY_EN, english);
-		dictionaryManager.addListener(dictionaryListener);
+		predictionEngine.getDictionaryManager().addDictionary(DICTIONARY_KO, dictionary);
+		predictionEngine.setDictionaryName(DICTIONARY_KO);
 		candidatesViewManager = new TextCandidatesViewManager();
-		candidatesViewManager.setListener(candidatesViewListener);
+		candidatesViewManager.setListener(predictionEngine.getCandidatesViewListener());
 
-		clearComposing();
-
-		startNewSentence(null);
-
-		updatePrediction();
+		predictionEngine.start(false);
+		this.predictionEngine = predictionEngine;
 	}
 
 	public void loadInputMethods() {
@@ -303,7 +270,7 @@ public class LBoard extends InputMethodService {
 				dos.writeByte(InternalInputMethodLoader.SOFT_DEFAULT);
 				dos.writeByte(InternalInputMethodLoader.HARD_DEFAULT);
 				dos.writeByte(InternalInputMethodLoader.CG_UNICODE);
-				for(char c : DICTIONARY_EN.toCharArray()) {
+				for(char c : DICTIONARY_KO.toCharArray()) {
 					dos.writeByte((byte) c);
 				}
 				dos.writeByte(0);
@@ -414,41 +381,9 @@ public class LBoard extends InputMethodService {
 		return this.mainInputView;
 	}
 
-	public void updatePrediction() {
-		if(!sentenceUnitComposition) return;
-		Word[] chain = getWordChain(sentence, 0);
-		if(start && chain[chain.length-1] != WordChain.START) {
-			Word[] start = new Word[] {WordChain.START, WordChain.START, WordChain.START};
-			dictionaryManager.searchNextWord(
-					currentInputMethod.getDictionaryName(),
-					LBoardDictionary.SEARCH_CHAIN,
-					LBoardDictionary.ORDER_BY_FREQUENCY,
-					composingWord,
-					new Word[][] {chain, start});
-		} else {
-			dictionaryManager.searchNextWord(
-					currentInputMethod.getDictionaryName(),
-					LBoardDictionary.SEARCH_CHAIN,
-					LBoardDictionary.ORDER_BY_FREQUENCY,
-					composingWord,
-					chain);
-		}
-	}
-
-	public void updateCandidates() {
-		if(!sentenceUnitComposition) return;
-		String stroke = composingWordStroke + STROKE_SEPARATOR + composingCharStroke;
-		stroke = stroke.replaceAll(String.valueOf(STROKE_SEPARATOR), "");
-		dictionaryManager.searchCurrentWord(
-				currentInputMethod.getDictionaryName(),
-				LBoardDictionary.SEARCH_PREFIX,
-				LBoardDictionary.ORDER_BY_FREQUENCY,
-				stroke);
-	}
-
 	public void updateInput() {
 		if(sentenceUnitComposition) {
-			composeSentence(sentence, composingWord, composingChar);
+			getCurrentInputConnection().setComposingText(predictionEngine.getComposing(), 1);
 		} else {
 			getCurrentInputConnection().setComposingText(composingChar, 1);
 		}
@@ -468,23 +403,7 @@ public class LBoard extends InputMethodService {
 	public void onStartInputView(EditorInfo info, boolean restarting) {
 		super.onStartInputView(info, restarting);
 		if(sentenceUnitComposition) {
-			if(restarting) {
-				commitComposingChar();
-				if(!composingWord.isEmpty()) appendWord(composingWord, composingWordStroke, Word.ATTRIBUTE_SPACED);
-				clearComposing();
-				commitSentence(sentence, true, true);
-				startNewSentence(sentence);
-				updateInput();
-				start = true;
-				updatePrediction();
-			} else {
-				commitComposingChar();
-				clearComposing();
-				startNewSentence(sentence);
-				updateInput();
-				start = true;
-				updatePrediction();
-			}
+			predictionEngine.start(restarting);
 		} else {
 			composingChar = "";
 			commitComposingChar();
@@ -519,62 +438,36 @@ public class LBoard extends InputMethodService {
 //					manager.switchToNextInputMethod(token, false);
 //				}
 				commitComposingChar();
-				if(!composingWord.isEmpty()) {
-					appendWord(composingWord, composingWordStroke, Word.ATTRIBUTE_SPACED);
-					clearComposing();
-				}
+				predictionEngine.halfCommitWord();
 
 				if(++currentInputMethodId >= inputMethods.size()) currentInputMethodId = 0;
 				currentInputMethod = inputMethods.get(currentInputMethodId);
 				updateInputView();
 
 				updateInput();
-				start = true;
-				updatePrediction();
 			}
 			return true;
 		case KeyEvent.KEYCODE_DEL:
 			if(event.getAction() == KeyEvent.ACTION_DOWN) {
-				if (currentInputMethod.getCharacterGenerator().backspace()) {
-					composingCharStroke = composingCharStroke.substring(0, composingCharStroke.length()-1);
-					if(!composingCharStroke.isEmpty()) updateCandidates();
-					else updatePrediction();
-				} else {
-					if(searchViewShown) {
-						if(searchText.length() > 0) {
-							searchText = searchText.substring(0, searchText.length()-1);
+				if(sentenceUnitComposition) {
+					if(!predictionEngine.backspace()) {
+						if(searchViewShown) {
+							if(searchText.length() > 0) {
+								searchText = searchText.substring(0, searchText.length()-1);
+							}
+							searchViewManager.setText(searchText + searchTextComposing);
 						}
-						searchViewManager.setText(searchText + searchTextComposing);
-					} else {
-						if(!composingWord.isEmpty()) {
-							composingWord = composingWord.substring(0, composingWord.length()-1);
-							for(int i = composingWordStroke.length()-1 ; i >= 0 ; i--) {
-								if(composingWordStroke.charAt(i) == STROKE_SEPARATOR) {
-									composingWordStroke = composingWordStroke.substring(0, i);
-									break;
-								}
+					}
+				} else {
+					if(!backspace()) {
+						if(searchViewShown) {
+							if(searchText.length() > 0) {
+								searchText = searchText.substring(0, searchText.length()-1);
 							}
-							updateInput();
-							updateCandidates();
-						} else if(sentence.size() > 0) {
-							Word last = sentence.getLast();
-							if((last.getAttribute() & Sentence.ATTRIBUTE_SPACED) != 0) {
-								last.setAttribute(last.getAttribute() & ~Sentence.ATTRIBUTE_SPACED);
-							} else {
-								sentence.pop();
-							}
-							clearComposing();
-							updateInput();
-							updateCandidates();
-						} else {
-							clearComposing();
-							ic.sendKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DEL));
-							ic.sendKeyEvent(new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_DEL));
+							searchViewManager.setText(searchText + searchTextComposing);
 						}
 					}
 				}
-			} else {
-				if(sentence.size() <= 0 && composingWord.isEmpty() && composingChar.isEmpty()) updatePrediction();
 			}
 			return true;
 		}
@@ -600,19 +493,7 @@ public class LBoard extends InputMethodService {
 			switch (event.getKeyCode()) {
 			case KeyEvent.KEYCODE_SPACE:
 				if(sentenceUnitComposition) {
-					commitComposingChar();
-					if (composingWord.isEmpty() && sentence.size() > 0) {
-						Word last = sentence.getLast();
-						if ((last.getAttribute() & Sentence.ATTRIBUTE_SPACED) == 0) {
-							last.setAttribute(last.getAttribute() | Sentence.ATTRIBUTE_SPACED);
-						}
-					} else if (!composingWord.isEmpty()) {
-						appendWord(composingWord, composingWordStroke, Sentence.ATTRIBUTE_SPACED);
-					}
-					clearComposing();
-					updateInput();
-					updatePrediction();
-					start = false;
+
 				} else {
 					return false;
 				}
@@ -620,15 +501,7 @@ public class LBoard extends InputMethodService {
 
 			case KeyEvent.KEYCODE_ENTER:
 				if(sentenceUnitComposition) {
-					commitComposingChar();
-					if (!composingWord.isEmpty()) appendWord(composingWord, composingWordStroke);
-					clearComposing();
-					boolean learn = !isPasswordField();
-					commitSentence(sentence, learn);
-					startNewSentence(sentence);
-					updateInput();
-					updatePrediction();
-					start = true;
+
 				} else {
 					return false;
 				}
@@ -645,6 +518,13 @@ public class LBoard extends InputMethodService {
 		}
 
 		return ret;
+	}
+
+	public boolean backspace() {
+		if (currentInputMethod.getCharacterGenerator().backspace()) {
+			return true;
+		}
+		return false;
 	}
 
 	public void shareDictionary() {
@@ -740,13 +620,6 @@ public class LBoard extends InputMethodService {
 		else return result;
 	}
 
-	public void clearComposing() {
-		composingWord = "";
-		composingChar = "";
-		composingWordStroke = "";
-		composingCharStroke = "";
-	}
-
 	public void commitText(CharSequence text) {
 		if(searchViewShown) {
 			searchText += text;
@@ -765,23 +638,7 @@ public class LBoard extends InputMethodService {
 
 				default:
 					if(sentenceUnitComposition) {
-						if(sentenceStops.contains(text)) {
-							commitComposingChar();
-							appendWord(composingWord, composingWordStroke, 0);
-							clearComposing();
-							composingWord += text;
-							composingWordStroke += String.valueOf(STROKE_SEPARATOR) + text;
-							appendWord(composingWord, composingWordStroke, 0);
-							clearComposing();
-							updateInput();
-							start = true;
-							updatePrediction();
-						} else {
-							composingWord += text;
-							composingWordStroke += String.valueOf(STROKE_SEPARATOR) + text;
-							updateInput();
-							updateCandidates();
-						}
+						predictionEngine.appendText(text);
 					} else {
 						getCurrentInputConnection().commitText(text, 1);
 					}
@@ -794,116 +651,24 @@ public class LBoard extends InputMethodService {
 		}
 	}
 
-	public void appendStroke(String stroke) {
-		composingCharStroke += stroke;
-		updateCandidates();
-	}
-
 	public void composeChar(String composingChar) {
-		this.composingChar = composingChar;
+		if(sentenceUnitComposition) {
+			predictionEngine.composeChar(composingChar);
+		} else {
+			this.composingChar = composingChar;
+		}
 	}
 
 	public void commitComposingChar() {
-		if(!sentenceUnitComposition) {
+		if(sentenceUnitComposition) {
+			predictionEngine.commitComposingChar();
+		} else {
 			InputConnection ic = getCurrentInputConnection();
 			ic.setComposingText(composingChar, 1);
 			ic.finishComposingText();
 			composingChar = "";
 			return;
 		}
-		this.composingWord += composingChar;
-		this.composingChar = "";
-
-		if(composingCharStroke != "") this.composingWordStroke += String.valueOf(STROKE_SEPARATOR) + composingCharStroke;
-		this.composingCharStroke = "";
-	}
-
-	public void appendWord(String composingWord, String composingWordStroke) {
-		this.appendWord(composingWord, composingWordStroke, 0);
-	}
-
-	public void appendWord(String composingWord, String composingWordStroke, int attribute) {
-		String stroke = composingWordStroke.replaceAll(String.valueOf(STROKE_SEPARATOR), "");
-		Word word = new Word(composingWord, stroke, 1, attribute);
-		this.appendWord(word);
-	}
-
-	public void appendWord(Word word) {
-		sentence.append(word);
-	}
-
-	public void startNewSentence(Sentence prev) {
-		sentence = new Sentence(prev, null, null);
-	}
-
-	public void composeSentence(Sentence sentence, String composingWord, String composingChar) {
-		if(sentence == null) return;
-		InputConnection ic = getCurrentInputConnection();
-		SpannableStringBuilder str = new SpannableStringBuilder();
-		str.append(sentence.getCandidate());
-		int start = 0, end = str.length();
-		str.setSpan(SPAN_COMPOSING_SENTENCE, start, end, Spanned.SPAN_COMPOSING);
-		str.append(composingWord);
-		start = end;
-		end = str.length();
-		str.setSpan(SPAN_COMPOSING_WORD, start, end, Spanned.SPAN_COMPOSING);
-		str.append(composingChar);
-		start = end;
-		end = str.length();
-		str.setSpan(SPAN_COMPOSING_CHAR, start, end, Spanned.SPAN_COMPOSING);
-		ic.setComposingText(str, 1);
-	}
-
-	public void commitSentence(Sentence sentence, boolean learn) {
-		this.commitSentence(sentence, learn, false);
-	}
-
-	public void commitSentence(Sentence sentence, boolean learn, boolean clear) {
-		InputConnection ic = getCurrentInputConnection();
-
-		ic.setComposingText("", 1);
-		ic.finishComposingText();
-
-		if(!clear) ic.commitText(sentence.getCandidate(), 1);
-
-		if(learn) {
-			learnWordChain(getWordChain(sentence, 0));
-		}
-
-	}
-
-	public void learnWord(Word word) {
-		try {
-			dictionaryManager.learnWord(currentInputMethod.getDictionaryName(), word);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-
-	public void learnWordChain(Word[] words) {
-		try {
-			dictionaryManager.learnWords(currentInputMethod.getDictionaryName(), words);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-
-	public Word[] getWordChain(Sentence sentence, int position) {
-		Word[] words = new Word[sentence.size() - position];
-		for(int i = 0 ; i < words.length ; i++) {
-			int index = words.length - i - 1;
-			if(sentence.size()-1 - position - i < 0) {
-				if(sentence.getPrev() != null && sentence.getPrev().size()-1 + sentence.size() - position - i >= 0) {
-					Sentence prev = sentence.getPrev();
-					words[index] = prev.get(prev.size()-1 + sentence.size() - position - i);
-				} else {
-					words[index] = WordChain.START;
-				}
-			} else {
-				words[index] = sentence.get(sentence.size()-1 - position - i);
-			}
-		}
-		return words;
 	}
 
 	public void commitImage(String mimeType, Uri contentUri, String imageDescription) {

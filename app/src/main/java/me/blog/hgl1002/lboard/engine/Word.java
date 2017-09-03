@@ -2,6 +2,9 @@ package me.blog.hgl1002.lboard.engine;
 
 public class Word {
 
+	public static final Word START = new Word("START", null);
+	public static final Word END = new Word("END", null);
+
 	public static final int ATTRIBUTE_SPACED = 0x01;
 
 	String candidate;
