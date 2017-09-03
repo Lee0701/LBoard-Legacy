@@ -75,6 +75,30 @@ public class DictionaryManager {
 		return true;
 	}
 
+	public boolean learnWord(final String dictionaryName, final Word word) {
+		if(!(dictionaries.get(dictionaryName) instanceof WritableDictionary))
+			throw new RuntimeException("Write operation not available on dictionary: " + dictionaryName);
+		new Thread(new Runnable() {
+			@Override
+			public void run() {
+				((WritableDictionary) dictionaries.get(dictionaryName)).learnWord(word);
+			}
+		}).start();
+		return true;
+	}
+
+	public boolean learnWords(final String dictionaryName, final Word[] words) {
+		if(!(dictionaries.get(dictionaryName) instanceof WritableDictionary))
+			throw new RuntimeException("Write operation not available on dictionary: " + dictionaryName);
+		new Thread(new Runnable() {
+			@Override
+			public void run() {
+				((WritableDictionary) dictionaries.get(dictionaryName)).learnWords(words);
+			}
+		}).start();
+		return true;
+	}
+
 	public void addDictionary(String name, LBoardDictionary dictionary) {
 		dictionaries.put(name, dictionary);
 	}

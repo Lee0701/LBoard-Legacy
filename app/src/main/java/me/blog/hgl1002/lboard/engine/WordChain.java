@@ -2,8 +2,6 @@ package me.blog.hgl1002.lboard.engine;
 
 public class WordChain {
 
-	public static final int DEFAULT_LENGTH = 3;
-
 	public static final Word START = new Word("START", null);
 	public static final Word END = new Word("END", null);
 

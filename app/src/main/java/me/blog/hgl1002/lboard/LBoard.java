@@ -416,22 +416,22 @@ public class LBoard extends InputMethodService {
 
 	public void updatePrediction() {
 		if(!sentenceUnitComposition) return;
-		WordChain chain = getWordChain(sentence, 0);
-		if(start && chain.get(chain.size()-1) != WordChain.START) {
+		Word[] chain = getWordChain(sentence, 0);
+		if(start && chain[chain.length-1] != WordChain.START) {
 			Word[] start = new Word[] {WordChain.START, WordChain.START, WordChain.START};
 			dictionaryManager.searchNextWord(
 					currentInputMethod.getDictionaryName(),
 					LBoardDictionary.SEARCH_CHAIN,
 					LBoardDictionary.ORDER_BY_FREQUENCY,
 					composingWord,
-					new Word[][] {chain.getAll(), start});
+					new Word[][] {chain, start});
 		} else {
 			dictionaryManager.searchNextWord(
 					currentInputMethod.getDictionaryName(),
 					LBoardDictionary.SEARCH_CHAIN,
 					LBoardDictionary.ORDER_BY_FREQUENCY,
 					composingWord,
-					chain.getAll());
+					chain);
 		}
 	}
 
@@ -867,33 +867,29 @@ public class LBoard extends InputMethodService {
 		if(!clear) ic.commitText(sentence.getCandidate(), 1);
 
 		if(learn) {
-			for(int i = 0 ; i < sentence.size() ; i++) {
-				WordChain chain = getWordChain(sentence, i);
-				learnWordChain(chain);
-				learnWord(sentence.get(i));
-			}
+			learnWordChain(getWordChain(sentence, 0));
 		}
 
 	}
 
 	public void learnWord(Word word) {
-		LBoardDictionary current = dictionaryManager.getDictionary(currentInputMethod.getDictionaryName());
-		if(current instanceof SQLiteDictionary && word.getCandidate() != "") {
-			SQLiteDictionary dictionary = (SQLiteDictionary) current;
-			dictionary.learnWord(word);
+		try {
+			dictionaryManager.learnWord(currentInputMethod.getDictionaryName(), word);
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 	}
 
-	public void learnWordChain(WordChain prev) {
-		LBoardDictionary current = dictionaryManager.getDictionary(currentInputMethod.getDictionaryName());
-		if(current instanceof SQLiteDictionary) {
-			SQLiteDictionary dictionary = (SQLiteDictionary) current;
-			dictionary.learnChain(prev);
+	public void learnWordChain(Word[] words) {
+		try {
+			dictionaryManager.learnWords(currentInputMethod.getDictionaryName(), words);
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 	}
 
-	public WordChain getWordChain(Sentence sentence, int position) {
-		Word[] words = new Word[WordChain.DEFAULT_LENGTH];
+	public Word[] getWordChain(Sentence sentence, int position) {
+		Word[] words = new Word[sentence.size() - position];
 		for(int i = 0 ; i < words.length ; i++) {
 			int index = words.length - i - 1;
 			if(sentence.size()-1 - position - i < 0) {
@@ -907,7 +903,7 @@ public class LBoard extends InputMethodService {
 				words[index] = sentence.get(sentence.size()-1 - position - i);
 			}
 		}
-		return new WordChain(words);
+		return words;
 	}
 
 	public void commitImage(String mimeType, Uri contentUri, String imageDescription) {
