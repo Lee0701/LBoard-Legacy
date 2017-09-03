@@ -389,7 +389,7 @@ public class LBoard extends InputMethodService {
 				if(searchViewShown) {
 					candidatesView.setVisibility(View.INVISIBLE);
 				} else {
-					candidatesView.setVisibility(View.VISIBLE);
+					hideSearchView();
 				}
 			}
 		});
