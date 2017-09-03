@@ -44,7 +44,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
-import java.util.Stack;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -72,7 +71,7 @@ import me.blog.hgl1002.lboard.search.SearchEngine;
 import me.blog.hgl1002.lboard.search.SearchViewManager;
 import me.blog.hgl1002.lboard.search.data.ImageData;
 import me.blog.hgl1002.lboard.search.data.UrlStringData;
-import me.blog.hgl1002.lboard.search.engines.GoogleWebSearchEngine;
+import me.blog.hgl1002.lboard.search.engines.WebSearchEngine;
 
 public class LBoard extends InputMethodService {
 
@@ -228,7 +227,7 @@ public class LBoard extends InputMethodService {
 
 		currentInputMethod = inputMethods.get(currentInputMethodId);
 
-		SearchEngine engine = new GoogleWebSearchEngine();
+		SearchEngine engine = new WebSearchEngine("https://www.google.co.kr/search?ie=utf8&oe=utf8&q=", "");
 		searchViewManager = new DefaultSearchViewManager(this, engine);
 
 		dictionaryManager = new DictionaryManager();

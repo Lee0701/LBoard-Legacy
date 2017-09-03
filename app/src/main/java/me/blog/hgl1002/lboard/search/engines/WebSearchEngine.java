@@ -10,19 +10,24 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 
-public class GoogleWebSearchEngine extends SearchEngineImpl {
+public class WebSearchEngine extends SearchEngineImpl {
 
-	public static final String SEARCH_URL = "https://www.google.co.kr/search?ie=utf8&oe=utf8&q=";
+	protected String searchUrlPrefix, searchUrlSuffix;
 
 	private String searchQuery;
+
+	public WebSearchEngine(String searchUrlPrefix, String searchUrlSuffix) {
+		this.searchUrlPrefix = searchUrlPrefix;
+		this.searchUrlSuffix = searchUrlSuffix;
+	}
 
 	@Override
 	public void search(Object query) {
 		try {
-			searchQuery = SEARCH_URL + URLEncoder.encode((String) query, "UTF-8");
+			searchQuery = searchUrlPrefix + URLEncoder.encode((String) query, "UTF-8") + searchUrlSuffix;
 		} catch(UnsupportedEncodingException e) {
 			e.printStackTrace();
-			searchQuery = SEARCH_URL + (String) query;
+			searchQuery = searchUrlPrefix + (String) query + searchUrlSuffix;
 		}
 		new JsonSearchTask().execute();
 	}
