@@ -26,7 +26,7 @@ public class TreeParser {
 		} else if (node instanceof BinaryTreeNode) {
 			return binaryOperation((BinaryTreeNode) node);
 		} else if (node instanceof TernaryTreeNode) {
-			return trinominalOperation((TernaryTreeNode) node);
+			return ternaryOperation((TernaryTreeNode) node);
 		} else if (node instanceof ListTreeNode) {
 			return listOperation((ListTreeNode) node);
 		} else {
@@ -202,7 +202,7 @@ public class TreeParser {
 		}
 	}
 
-	public long trinominalOperation(TernaryTreeNode node) {
+	public long ternaryOperation(TernaryTreeNode node) {
 		long left = parse(node.getLeft()), right = parse(node.getRight()), center = parse(node.getCenter());
 		switch(node.getOperator()) {
 		case CONDITION:
