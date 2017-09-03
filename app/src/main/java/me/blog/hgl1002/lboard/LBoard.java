@@ -620,6 +620,12 @@ public class LBoard extends InputMethodService {
 		else return result;
 	}
 
+	public void appendStroke(String stroke) {
+		if(sentenceUnitComposition) {
+			predictionEngine.appendStroke(stroke);
+		}
+	}
+
 	public void commitText(CharSequence text) {
 		if(searchViewShown) {
 			searchText += text;
