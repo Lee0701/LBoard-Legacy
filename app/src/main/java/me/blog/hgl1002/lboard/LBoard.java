@@ -497,7 +497,6 @@ public class LBoard extends InputMethodService {
 	@Override
 	public void onStartInput(EditorInfo attribute, boolean restarting) {
 		super.onStartInput(attribute, restarting);
-		composingChar = "";
 		if(getCurrentInputConnection() != null) currentInputMethod.getCharacterGenerator().resetComposing();
 	}
 
