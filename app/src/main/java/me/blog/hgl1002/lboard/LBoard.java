@@ -55,12 +55,7 @@ import me.blog.hgl1002.lboard.engine.SQLiteDictionary;
 import me.blog.hgl1002.lboard.engine.Sentence;
 import me.blog.hgl1002.lboard.engine.Word;
 import me.blog.hgl1002.lboard.engine.WordChain;
-import me.blog.hgl1002.lboard.event.AppendComposingStrokeEvent;
-import me.blog.hgl1002.lboard.event.CharacterCompositionEvent;
-import me.blog.hgl1002.lboard.event.ComposingStrokeEvent;
-import me.blog.hgl1002.lboard.event.FinishCharacterCompositionEvent;
-import me.blog.hgl1002.lboard.event.LBoardEvent;
-import me.blog.hgl1002.lboard.event.LBoardEventListener;
+import me.blog.hgl1002.lboard.event.*;
 import me.blog.hgl1002.lboard.ime.HardKeyboard;
 import me.blog.hgl1002.lboard.ime.InputMethodLoader;
 import me.blog.hgl1002.lboard.ime.InternalInputMethodLoader;
@@ -809,11 +804,11 @@ public class LBoard extends InputMethodService implements LBoardEventListener {
 		}
 	}
 
-	public void composeChar(String composingChar) {
+	private void composeChar(String composingChar) {
 		this.composingChar = composingChar;
 	}
 
-	public void commitComposingChar() {
+	private void commitComposingChar() {
 		if(!sentenceUnitComposition) {
 			InputConnection ic = getCurrentInputConnection();
 			ic.setComposingText(composingChar, 1);
@@ -828,25 +823,25 @@ public class LBoard extends InputMethodService implements LBoardEventListener {
 		this.composingCharStroke = "";
 	}
 
-	public void appendWord(String composingWord, String composingWordStroke) {
+	private void appendWord(String composingWord, String composingWordStroke) {
 		this.appendWord(composingWord, composingWordStroke, 0);
 	}
 
-	public void appendWord(String composingWord, String composingWordStroke, int attribute) {
+	private void appendWord(String composingWord, String composingWordStroke, int attribute) {
 		String stroke = composingWordStroke.replaceAll(String.valueOf(STROKE_SEPARATOR), "");
 		Word word = new Word(composingWord, stroke, 1, attribute);
 		this.appendWord(word);
 	}
 
-	public void appendWord(Word word) {
+	private void appendWord(Word word) {
 		sentence.append(word);
 	}
 
-	public void startNewSentence(Sentence prev) {
+	private void startNewSentence(Sentence prev) {
 		sentence = new Sentence(prev, null, null);
 	}
 
-	public void composeSentence(Sentence sentence, String composingWord, String composingChar) {
+	private void composeSentence(Sentence sentence, String composingWord, String composingChar) {
 		if(sentence == null) return;
 		InputConnection ic = getCurrentInputConnection();
 		SpannableStringBuilder str = new SpannableStringBuilder();
@@ -864,11 +859,11 @@ public class LBoard extends InputMethodService implements LBoardEventListener {
 		ic.setComposingText(str, 1);
 	}
 
-	public void commitSentence(Sentence sentence, boolean learn) {
+	private void commitSentence(Sentence sentence, boolean learn) {
 		this.commitSentence(sentence, learn, false);
 	}
 
-	public void commitSentence(Sentence sentence, boolean learn, boolean clear) {
+	private void commitSentence(Sentence sentence, boolean learn, boolean clear) {
 		InputConnection ic = getCurrentInputConnection();
 
 		ic.setComposingText("", 1);
@@ -886,7 +881,7 @@ public class LBoard extends InputMethodService implements LBoardEventListener {
 
 	}
 
-	public void learnWord(Word word) {
+	private void learnWord(Word word) {
 		LBoardDictionary current = dictionaryManager.getDictionary(currentInputMethod.getDictionaryName());
 		if(current instanceof SQLiteDictionary && word.getCandidate() != "") {
 			SQLiteDictionary dictionary = (SQLiteDictionary) current;
@@ -894,7 +889,7 @@ public class LBoard extends InputMethodService implements LBoardEventListener {
 		}
 	}
 
-	public void learnWordChain(WordChain prev) {
+	private void learnWordChain(WordChain prev) {
 		LBoardDictionary current = dictionaryManager.getDictionary(currentInputMethod.getDictionaryName());
 		if(current instanceof SQLiteDictionary) {
 			SQLiteDictionary dictionary = (SQLiteDictionary) current;
@@ -902,7 +897,7 @@ public class LBoard extends InputMethodService implements LBoardEventListener {
 		}
 	}
 
-	public WordChain getWordChain(Sentence sentence, int position) {
+	private WordChain getWordChain(Sentence sentence, int position) {
 		Word[] words = new Word[WordChain.DEFAULT_LENGTH];
 		for(int i = 0 ; i < words.length ; i++) {
 			int index = words.length - i - 1;
