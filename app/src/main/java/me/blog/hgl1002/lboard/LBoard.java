@@ -955,7 +955,7 @@ public class LBoard extends InputMethodService implements LBoardEventListener {
 		startActivity(shareIntent);
 	}
 
-	public void finishComposing() {
+	private void finishComposing() {
 		currentInputMethod.getCharacterGenerator().resetComposing();
 	}
 

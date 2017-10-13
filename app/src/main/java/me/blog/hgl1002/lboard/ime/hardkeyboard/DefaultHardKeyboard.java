@@ -81,14 +81,14 @@ public class DefaultHardKeyboard implements HardKeyboard {
 							if (ret) {
 								parent.onEvent(new AppendComposingStrokeEvent(new String(Character.toChars(keyChar))));
 							} else {
-								parent.finishComposing();
+								characterGenerator.resetComposing();
 								parent.commitText(new String(new char[]{(char) mappedCode}));
 							}
 						}
 						return true;
 					}
 				}
-				parent.finishComposing();
+				characterGenerator.resetComposing();
 				parent.commitText(new String(new char[]{keyChar}));
 				return true;
 			}
