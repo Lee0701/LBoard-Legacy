@@ -7,6 +7,7 @@ import android.view.inputmethod.EditorInfo;
 import java.util.Map;
 
 import me.blog.hgl1002.lboard.LBoard;
+import me.blog.hgl1002.lboard.event.AppendComposingStrokeEvent;
 import me.blog.hgl1002.lboard.expression.TreeParser;
 import me.blog.hgl1002.lboard.expression.nodes.TreeNode;
 import me.blog.hgl1002.lboard.ime.HardKeyboard;
@@ -88,7 +89,7 @@ public class BasicHardKeyboard implements HardKeyboard {
 						if (result != 0) {
 							boolean ret = characterGenerator.onCode(result);
 							if (ret) {
-								parent.appendStroke(new String(Character.toChars(keyChar)));
+								parent.onEvent(new AppendComposingStrokeEvent(new String(Character.toChars(keyChar))));
 							} else {
 								parent.finishComposing();
 								parent.commitText(new String(new char[]{(char) result}));

@@ -55,7 +55,9 @@ import me.blog.hgl1002.lboard.engine.SQLiteDictionary;
 import me.blog.hgl1002.lboard.engine.Sentence;
 import me.blog.hgl1002.lboard.engine.Word;
 import me.blog.hgl1002.lboard.engine.WordChain;
+import me.blog.hgl1002.lboard.event.AppendComposingStrokeEvent;
 import me.blog.hgl1002.lboard.event.CharacterCompositionEvent;
+import me.blog.hgl1002.lboard.event.ComposingStrokeEvent;
 import me.blog.hgl1002.lboard.event.FinishCharacterCompositionEvent;
 import me.blog.hgl1002.lboard.event.LBoardEvent;
 import me.blog.hgl1002.lboard.event.LBoardEventListener;
@@ -649,7 +651,13 @@ public class LBoard extends InputMethodService implements LBoardEventListener {
 			return true;
 		}
 
-
+		if(ev instanceof ComposingStrokeEvent) {
+			ComposingStrokeEvent event = (ComposingStrokeEvent) ev;
+			if(ev instanceof AppendComposingStrokeEvent) {
+				composingCharStroke += event.getComposingStroke();
+				updateCandidates();
+			}
+		}
 
 		return false;
 	}
@@ -799,11 +807,6 @@ public class LBoard extends InputMethodService implements LBoardEventListener {
 				getCurrentInputConnection().commitText(text, 1);
 			}
 		}
-	}
-
-	public void appendStroke(String stroke) {
-		composingCharStroke += stroke;
-		updateCandidates();
 	}
 
 	public void composeChar(String composingChar) {

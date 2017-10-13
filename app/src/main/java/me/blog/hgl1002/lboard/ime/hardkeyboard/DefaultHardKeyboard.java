@@ -10,6 +10,7 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 
 import me.blog.hgl1002.lboard.LBoard;
+import me.blog.hgl1002.lboard.event.AppendComposingStrokeEvent;
 import me.blog.hgl1002.lboard.ime.HardKeyboard;
 import me.blog.hgl1002.lboard.ime.KeyEventInfo;
 import me.blog.hgl1002.lboard.ime.LBoardInputMethod;
@@ -78,7 +79,7 @@ public class DefaultHardKeyboard implements HardKeyboard {
 						if (mappedCode != 0) {
 							boolean ret = characterGenerator.onCode(mappedCode);
 							if (ret) {
-								parent.appendStroke(new String(Character.toChars(keyChar)));
+								parent.onEvent(new AppendComposingStrokeEvent(new String(Character.toChars(keyChar))));
 							} else {
 								parent.finishComposing();
 								parent.commitText(new String(new char[]{(char) mappedCode}));
