@@ -55,6 +55,8 @@ import me.blog.hgl1002.lboard.engine.SQLiteDictionary;
 import me.blog.hgl1002.lboard.engine.Sentence;
 import me.blog.hgl1002.lboard.engine.Word;
 import me.blog.hgl1002.lboard.engine.WordChain;
+import me.blog.hgl1002.lboard.event.LBoardEvent;
+import me.blog.hgl1002.lboard.event.LBoardEventListener;
 import me.blog.hgl1002.lboard.ime.HardKeyboard;
 import me.blog.hgl1002.lboard.ime.InputMethodLoader;
 import me.blog.hgl1002.lboard.ime.InternalInputMethodLoader;
@@ -73,7 +75,7 @@ import me.blog.hgl1002.lboard.search.data.ImageData;
 import me.blog.hgl1002.lboard.search.data.UrlStringData;
 import me.blog.hgl1002.lboard.search.engines.WebSearchEngine;
 
-public class LBoard extends InputMethodService {
+public class LBoard extends InputMethodService implements LBoardEventListener {
 
 	public static final String DIRNAME_METHODS = "methods";
 
@@ -643,6 +645,11 @@ public class LBoard extends InputMethodService {
 			break;
 
 		}
+		return false;
+	}
+
+	@Override
+	public boolean onEvent(LBoardEvent event) {
 		return false;
 	}
 
