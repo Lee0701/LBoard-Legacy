@@ -8,6 +8,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
 
+import me.blog.hgl1002.lboard.event.CharacterCompositionEvent;
+import me.blog.hgl1002.lboard.event.FinishCharacterCompositionEvent;
+import me.blog.hgl1002.lboard.event.LBoardEventListener;
+
 public class UnicodeCharacterGenerator implements CharacterGenerator {
 
 	public static final String COMBINATION_MAGIC_NUMBER = "LCOM1";
@@ -69,7 +73,7 @@ public class UnicodeCharacterGenerator implements CharacterGenerator {
 			0x1184, 0x1185, 0x1188, 0x1191, 0x1192, 0x1194, 0x119e, 0x11a1		// 0x3187
 	};
 
-	protected CharacterGeneratorListener listener;
+	protected LBoardEventListener listener;
 
 	protected int cho, jung, jong;
 	protected int last;
@@ -276,7 +280,7 @@ public class UnicodeCharacterGenerator implements CharacterGenerator {
 						// 앞 종성을 앞 글자의 종성으로 한다.
 						this.jong = beforeJong;
 						this.composing = getVisible(this.cho, this.jung, this.jong);
-						if(listener != null) listener.onCompose(this, composing);
+						onCompose();
 						// 그리고 조합을 종료한 뒤,
 						resetComposing();
 						// 뒷 종성을 초성으로 변환하여 적용한다.
@@ -292,7 +296,7 @@ public class UnicodeCharacterGenerator implements CharacterGenerator {
 						if((convertedCho = convertToCho(this.jong+0x11a7)) >-1) {
 							this.jong = -1;
 							this.composing = getVisible(this.cho, this.jung, this.jong);
-							if(listener != null) listener.onCompose(this, composing);
+							onCompose();
 							resetComposing();
 							this.cho = convertedCho - 0x1100;
 							composing = getVisible(this.cho, this.jung, this.jong);
@@ -319,7 +323,7 @@ public class UnicodeCharacterGenerator implements CharacterGenerator {
 
 		// 화면에 표시되는 문자를 계산해서 표시를 요청한다.
 		this.composing = getVisible(this.cho, this.jung, this.jong);
-		if(listener != null) listener.onCompose(this, composing);
+		onCompose();
 
 		return result;
 	}
@@ -347,16 +351,17 @@ public class UnicodeCharacterGenerator implements CharacterGenerator {
 			return false;
 		}
 		// 백스페이스를 실행한 결과를 표시한다.
-		if(listener != null) listener.onCompose(this, composing);
+		onCompose();
 		return true;
 	}
 
 	@Override
 	public void resetComposing() {
-		if(listener != null) listener.onCommit(this);
+		String composing = this.composing;
 		cho = jung = jong = -1;
-		composing = "";
+		this.composing = "";
 		histories.clear();
+		if(listener != null) listener.onEvent(new FinishCharacterCompositionEvent(composing));
 	}
 
 	int getCombination(int a, int b) {
@@ -487,13 +492,17 @@ public class UnicodeCharacterGenerator implements CharacterGenerator {
 	}
 
 	@Override
-	public void setListener(CharacterGeneratorListener listener) {
+	public void setListener(LBoardEventListener listener) {
 		this.listener = listener;
 	}
 
 	@Override
 	public void removeListener() {
 		this.listener = null;
+	}
+
+	public void onCompose() {
+		if(listener != null) listener.onEvent(new CharacterCompositionEvent(composing));
 	}
 
 	public static int[][] loadCombinationTable(InputStream inputStream) {

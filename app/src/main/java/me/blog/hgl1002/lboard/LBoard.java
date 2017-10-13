@@ -55,6 +55,8 @@ import me.blog.hgl1002.lboard.engine.SQLiteDictionary;
 import me.blog.hgl1002.lboard.engine.Sentence;
 import me.blog.hgl1002.lboard.engine.Word;
 import me.blog.hgl1002.lboard.engine.WordChain;
+import me.blog.hgl1002.lboard.event.CharacterCompositionEvent;
+import me.blog.hgl1002.lboard.event.FinishCharacterCompositionEvent;
 import me.blog.hgl1002.lboard.event.LBoardEvent;
 import me.blog.hgl1002.lboard.event.LBoardEventListener;
 import me.blog.hgl1002.lboard.ime.HardKeyboard;
@@ -168,35 +170,6 @@ public class LBoard extends InputMethodService implements LBoardEventListener {
 		}
 	};
 
-	protected CharacterGenerator.CharacterGeneratorListener characterGeneratorListener
-			= new CharacterGenerator.CharacterGeneratorListener() {
-		@Override
-		public void onCompose(CharacterGenerator source, String composing) {
-			InputConnection ic = getCurrentInputConnection();
-			if(ic == null) return;
-			if(searchViewShown) {
-				searchTextComposing = composing;
-				searchViewManager.setText(searchText + searchTextComposing);
-			} else {
-				composeChar(composing);
-				updateInput();
-			}
-		}
-
-		@Override
-		public void onCommit(CharacterGenerator source) {
-			InputConnection ic = getCurrentInputConnection();
-			if(ic == null) return;
-			if(searchViewShown) {
-				searchText += searchTextComposing;
-				searchTextComposing = "";
-			} else {
-				commitComposingChar();
-				updateInput();
-			}
-		}
-	};
-
 	protected CandidatesViewManager.CandidatesViewListener candidatesViewListener
 			= new CandidatesViewManager.CandidatesViewListener() {
 		@Override
@@ -261,7 +234,8 @@ public class LBoard extends InputMethodService implements LBoardEventListener {
 			File lime = new File(dir, InternalInputMethodLoader.FILENAME_METHOD_DEF);
 			if(!lime.exists()) continue;
 			LBoardInputMethod method = loader.load(lime);
-			method.getCharacterGenerator().setListener(characterGeneratorListener);
+//			method.getCharacterGenerator().setListener(characterGeneratorListener);
+			method.getCharacterGenerator().setListener(this);
 			CharSequence[][] labels = new CharSequence[0x100][2];
 			SoftKeyboard soft = method.getSoftKeyboard();
 			HardKeyboard hard = method.getHardKeyboard();
@@ -649,7 +623,34 @@ public class LBoard extends InputMethodService implements LBoardEventListener {
 	}
 
 	@Override
-	public boolean onEvent(LBoardEvent event) {
+	public boolean onEvent(LBoardEvent ev) {
+		InputConnection ic = getCurrentInputConnection();
+
+		if(ev instanceof CharacterCompositionEvent) {
+			if(ic == null) return false;
+			CharacterCompositionEvent event = (CharacterCompositionEvent) ev;
+			if(ev instanceof FinishCharacterCompositionEvent) {
+				if(searchViewShown) {
+					searchText += searchTextComposing;
+					searchTextComposing = "";
+				} else {
+					commitComposingChar();
+					updateInput();
+				}
+			} else {
+				if(searchViewShown) {
+					searchTextComposing = event.getComposing();
+					searchViewManager.setText(searchText + searchTextComposing);
+				} else {
+					composeChar(event.getComposing());
+					updateInput();
+				}
+			}
+			return true;
+		}
+
+
+
 		return false;
 	}
 

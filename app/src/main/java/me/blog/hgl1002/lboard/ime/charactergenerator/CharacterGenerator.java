@@ -3,6 +3,7 @@ package me.blog.hgl1002.lboard.ime.charactergenerator;
 import java.util.Map;
 
 import me.blog.hgl1002.lboard.engine.StringSegment;
+import me.blog.hgl1002.lboard.event.LBoardEventListener;
 
 /**
  * CharacterGenerator.
@@ -19,30 +20,25 @@ public interface CharacterGenerator {
 	 * @param code		처리할 한글 코드.
 	 * @return			처리가 되었으면 {@code true}, 기본 처리를 요청하려면 {@code false}.
 	 */
-	public boolean onCode(long code);
+	boolean onCode(long code);
 
 	/**
 	 * 백스페이스를 처리한다.
 	 * @return			기본 처리를 요청하려면 {@code false}.
 	 */
-	public boolean backspace();
+	boolean backspace();
 
 	/**
 	 * 진행 중인 한글 조합을 종료한다.
 	 */
-	public void resetComposing();
+	void resetComposing();
 
 	/**
 	 * 상태 변수를 처리해서 돌려준다.
 	 */
-	public Map<String, Long> getVariables();
+	Map<String, Long> getVariables();
 
-	public void setListener(CharacterGeneratorListener listener);
-	public void removeListener();
-
-	public static interface CharacterGeneratorListener {
-		public void onCompose(CharacterGenerator source, String composing);
-		public void onCommit(CharacterGenerator source);
-	}
+	void setListener(LBoardEventListener listener);
+	void removeListener();
 
 }

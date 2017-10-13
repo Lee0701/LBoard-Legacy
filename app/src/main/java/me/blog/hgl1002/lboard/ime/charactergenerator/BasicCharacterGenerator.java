@@ -4,6 +4,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
 
+import me.blog.hgl1002.lboard.event.CharacterCompositionEvent;
+import me.blog.hgl1002.lboard.event.FinishCharacterCompositionEvent;
+import me.blog.hgl1002.lboard.event.LBoardEventListener;
 import me.blog.hgl1002.lboard.expression.TreeParser;
 import me.blog.hgl1002.lboard.ime.charactergenerator.basic.AutomataRule;
 import me.blog.hgl1002.lboard.ime.charactergenerator.basic.AutomataTable;
@@ -18,7 +21,7 @@ public class BasicCharacterGenerator implements CharacterGenerator {
 
 	protected TreeParser parser;
 
-	protected CharacterGeneratorListener listener;
+	protected LBoardEventListener listener;
 
 	protected State currentState;
 	protected Stack<State> previousStates;
@@ -125,7 +128,7 @@ public class BasicCharacterGenerator implements CharacterGenerator {
 			currentState.syllable = syllable;
 
 			String composing = convertToUnicode(replaceVirtuals(currentState.syllable));
-			if(listener != null) listener.onCompose(this, composing);
+			if(listener != null) listener.onEvent(new CharacterCompositionEvent(composing));
 			return true;
 		}
 		return false;
@@ -164,16 +167,17 @@ public class BasicCharacterGenerator implements CharacterGenerator {
 			currentState = previousStates.pop();
 			String composing = convertToUnicode(replaceVirtuals(currentState.syllable));
 			if(currentState.syllable == 0) composing = "";
-			if(listener != null) listener.onCompose(this, composing);
+			if(listener != null) listener.onEvent(new CharacterCompositionEvent(composing));
 			return true;
 		}
 	}
 
 	@Override
 	public void resetComposing() {
+		String composing = BasicCodeSystem.convertToUnicode(currentState.syllable);
 		previousStates.clear();
 		currentState = new State();
-		listener.onCommit(this);
+		if(listener != null) listener.onEvent(new FinishCharacterCompositionEvent(composing));
 	}
 
 	@Override
@@ -236,7 +240,7 @@ public class BasicCharacterGenerator implements CharacterGenerator {
 	}
 
 	@Override
-	public void setListener(CharacterGeneratorListener listener) {
+	public void setListener(LBoardEventListener listener) {
 		this.listener = listener;
 	}
 
